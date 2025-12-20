@@ -1,0 +1,17 @@
+{
+  "name": "claude-code-permissions-hook",
+  "owner": {
+    "name": "LoopOuroboros"
+  },
+  "plugins": [
+    {
+      "name": "bash-permission-hook",
+      "source": "./bash-permission-hook",
+      "description": "Claude Code插件，拦截危险的Bash命令并推荐Claude内置工具。支持命令拆分、前缀匹配、多词命令识别等完整功能。",
+      "version": "1.0.0",
+      "author": {
+        "name": "LoopOuroboros"
+      }
+    }
+  ]
+}
