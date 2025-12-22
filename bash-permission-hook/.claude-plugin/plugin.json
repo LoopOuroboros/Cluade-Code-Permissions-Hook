@@ -1,5 +1,5 @@
 {
   "name": "bash-permission-hook",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Claude Code plugin that intercepts dangerous Bash commands and 推荐使用Claude Code内置工具"
 }

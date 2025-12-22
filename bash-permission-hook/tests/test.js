@@ -16,8 +16,9 @@ const {
 // 加载规则用于测试
 const rules = [
     { pattern: "find", action: "reject", suggestion: "使用内置的Glob工具代替" },
-    { pattern: "grep", action: "reject", suggestion: "使用内置的Grep工具代替" },
+    { pattern: "grep", action: "reject", suggestion: "使用内置的Grep工具代替", allowInPipeReceiver: true },
     { pattern: "cat", action: "reject", suggestion: "使用内置的Read工具代替" },
+    { pattern: "head", action: "reject", suggestion: "使用内置的Read工具代替", allowInPipeReceiver: true },
     { pattern: "npm install", action: "reject", suggestion: "请手动在终端中执行npm install" }
 ];
 
@@ -177,6 +178,12 @@ function testPipeReceiverDetection() {
             expectedReceiver: true
         },
         {
+            name: 'head在管道接收端位置',
+            command: 'cat file.txt | head -10',
+            headIndex: 1,
+            expectedReceiver: true
+        },
+        {
             name: '多个管道中的grep',
             command: 'cmd1 | grep a | grep b',
             grepIndices: [1, 2],
@@ -199,29 +206,37 @@ function testPipeReceiverDetection() {
             command: 'grep pattern file.txt | wc -l',
             grepIndex: 0,
             expectedReceiver: false
+        },
+        {
+            name: 'head作为管道发送端',
+            command: 'head -10 file.txt | wc -l',
+            headIndex: 0,
+            expectedReceiver: false
         }
     ];
 
     let passed = 0;
     let failed = 0;
 
-    testCases.forEach(({ name, command, grepIndex, expectedReceiver }) => {
-        if (grepIndex === undefined) return; // 跳过多grep的特殊测试
+    testCases.forEach(({ name, command, grepIndex, expectedReceiver, headIndex }) => {
+        if (grepIndex === undefined && headIndex === undefined) return; // 跳过特殊测试
 
         const { commands, splits } = splitCommandsWithSplits(command);
-        const isReceiver = isInPipeReceiver(commands[grepIndex], grepIndex, commands, splits);
+        const index = grepIndex !== undefined ? grepIndex : headIndex;
+        const cmdType = grepIndex !== undefined ? 'grep' : 'head';
+        const isReceiver = isInPipeReceiver(commands[index], index, commands, splits);
         const isMatch = isReceiver === expectedReceiver;
 
         if (isMatch) {
             console.log(`✓ ${name}: 通过`);
             console.log(`  命令: "${command}"`);
-            console.log(`  grep索引: ${grepIndex}`);
+            console.log(`  ${cmdType}索引: ${index}`);
             console.log(`  是否接收端: ${isReceiver}`);
             passed++;
         } else {
             console.log(`✗ ${name}: 失败`);
             console.log(`  命令: "${command}"`);
-            console.log(`  grep索引: ${grepIndex}`);
+            console.log(`  ${cmdType}索引: ${index}`);
             console.log(`  期望接收端: ${expectedReceiver}`);
             console.log(`  实际接收端: ${isReceiver}`);
             failed++;
@@ -320,6 +335,40 @@ function testPipeGrepHandling() {
             command: '/usr/bin/grep test file.txt',
             shouldBlock: true,
             blockedBy: 'grep'
+        },
+        {
+            name: 'head在管道中被放行',
+            command: 'echo "content" | head -10',
+            shouldBlock: false
+        },
+        {
+            name: '单独head应该被拦截',
+            command: 'head file.txt',
+            shouldBlock: true,
+            blockedBy: 'head'
+        },
+        {
+            name: '单独的head -n 10应该被拦截',
+            command: 'head -n 10 file.txt',
+            shouldBlock: true,
+            blockedBy: 'head'
+        },
+        {
+            name: '管道中的head带选项应该被放行',
+            command: 'echo "test" | head -5',
+            shouldBlock: false
+        },
+        {
+            name: '复杂管道中的head应该被放行',
+            command: 'find . -name "*.js" | grep test | head -5',
+            shouldBlock: true,  // find被拦截
+            blockedBy: 'find'
+        },
+        {
+            name: 'head作为管道发送端应该被放行但前面命令被拦截',
+            command: 'cat file.txt | head -10 | wc -l',
+            shouldBlock: true,  // cat被拦截
+            blockedBy: 'cat'
         }
     ];
 
@@ -335,13 +384,15 @@ function testPipeGrepHandling() {
         };
 
         const result = handleHook(mockInput);
-        const blocked = result.decision === "block";
+        const blocked = result.hookSpecificOutput?.permissionDecision === "deny";
         let isMatch = blocked === shouldBlock;
 
         // 如果期望被拦截，还需要验证拦截的命令
         if (shouldBlock && blockedBy) {
-            // 从消息中提取命令名
-            const reasonFrom = result.reason ? result.reason.match(/⚠️ (\w+)命令/) : null;
+            // 从permissionDecisionReason中提取命令名
+            const reasonFrom = result.hookSpecificOutput?.permissionDecisionReason
+                ? result.hookSpecificOutput.permissionDecisionReason.match(/⚠️ (\w+)命令/)
+                : null;
             isMatch = isMatch && reasonFrom && reasonFrom[1] === blockedBy;
         }
 
@@ -349,8 +400,8 @@ function testPipeGrepHandling() {
             console.log(`✓ ${name}: 通过`);
             console.log(`  命令: "${command}"`);
             console.log(`  结果: ${blocked ? '被拦截' : '已放行'}`);
-            if (result.reason) {
-                console.log(`  原因: ${result.reason}`);
+            if (result.hookSpecificOutput?.permissionDecisionReason) {
+                console.log(`  原因: ${result.hookSpecificOutput.permissionDecisionReason}`);
             }
             passed++;
         } else {
@@ -359,11 +410,13 @@ function testPipeGrepHandling() {
             console.log(`  期望: ${shouldBlock ? '拦截' : '放行'}`);
             console.log(`  实际: ${blocked ? '拦截' : '放行'}`);
             if (blockedBy) {
-                const reasonFrom = result.reason ? result.reason.split(' ')[1] : null;
+                const reasonFrom = result.hookSpecificOutput?.permissionDecisionReason
+                    ? result.hookSpecificOutput.permissionDecisionReason.split(' ')[1]
+                    : null;
                 console.log(`  期望拦截命令: ${blockedBy}, 实际: ${reasonFrom}`);
             }
-            if (result.reason) {
-                console.log(`  原因: ${result.reason}`);
+            if (result.hookSpecificOutput?.permissionDecisionReason) {
+                console.log(`  原因: ${result.hookSpecificOutput.permissionDecisionReason}`);
             }
             failed++;
         }
@@ -446,6 +499,73 @@ function testCompleteFlow() {
 }
 
 /**
+ * 测试新版hookSpecificOutput格式
+ */
+function testNewJSONFormat() {
+    console.log('\n=== 测试新版hookSpecificOutput JSON格式 ===\n');
+
+    const testCases = [
+        {
+            name: '拦截命令返回hookSpecificOutput格式',
+            command: 'grep "test" file.txt',
+            expectedDecision: 'deny',
+            shouldContain: 'hookEventName'
+        },
+        {
+            name: '放行命令也返回hookSpecificOutput格式',
+            command: 'echo hello',
+            expectedDecision: 'allow',
+            shouldContain: 'hookEventName'
+        },
+        {
+            name: '包含permissionDecisionReason',
+            command: 'find .',
+            expectedDecision: 'deny',
+            shouldContainReason: true
+        }
+    ];
+
+    let passed = 0;
+    let failed = 0;
+
+    testCases.forEach(({ name, command, expectedDecision, shouldContain, shouldContainReason }) => {
+        const mockInput = {
+            tool_input: {
+                command: command
+            }
+        };
+
+        const result = handleHook(mockInput);
+
+        const hasHookSpecificOutput = result.hasOwnProperty('hookSpecificOutput');
+        const correctDecision = expectedDecision !== undefined
+            ? result.hookSpecificOutput?.permissionDecision === expectedDecision
+            : true;
+        const hasHookEventName = result.hookSpecificOutput?.hookEventName === 'PreToolUse';
+        const hasReason = shouldContainReason
+            ? !!result.hookSpecificOutput?.permissionDecisionReason
+            : true;
+
+        const isMatch = hasHookSpecificOutput && correctDecision && hasHookEventName && hasReason;
+
+        if (isMatch) {
+            console.log(`✓ ${name}: 通过`);
+            console.log(`  JSON结构: ${JSON.stringify(result, null, 2).substring(0, 100)}...`);
+            passed++;
+        } else {
+            console.log(`✗ ${name}: 失败`);
+            console.log(`  期望格式: 包含hookSpecificOutput.permissionDecision=${expectedDecision}`);
+            console.log(`  实际: ${JSON.stringify(result)}`);
+            failed++;
+        }
+        console.log();
+    });
+
+    console.log(`\n新版JSON格式测试结果: ${passed} 通过, ${failed} 失败\n`);
+    return failed === 0;
+}
+
+/**
  * 运行所有测试
  */
 function runAllTests() {
@@ -459,13 +579,15 @@ function runAllTests() {
     const test3 = testPipeReceiverDetection();
     const test4 = testPipeGrepHandling();
     const test5 = testCompleteFlow();
+    const test6 = testNewJSONFormat();
 
     console.log('\n========================================');
     console.log('              测试总结                ');
     console.log('========================================\n');
 
-    if (test1 && test2 && test3 && test4 && test5) {
+    if (test1 && test2 && test3 && test4 && test5 && test6) {
         console.log('✓ 所有测试通过！');
+        console.log('✓ 新版hookSpecificOutput JSON格式正确');
         process.exit(0);
     } else {
         console.log('✗ 存在失败的测试');

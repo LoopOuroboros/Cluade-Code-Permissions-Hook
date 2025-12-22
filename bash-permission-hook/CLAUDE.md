@@ -102,9 +102,13 @@ node tests/test.js
 {
   "pattern": "grep",
   "action": "reject",
-  "suggestion": "使用内置的Grep工具代替"
+  "suggestion": "使用内置的Grep工具代替",
+  "allowInPipeReceiver": true
 }
 ```
+
+**新增字段说明**：
+- **`allowInPipeReceiver`**: Boolean类型，可选字段。设置为 `true` 时，命令在管道接收端位置将被放行，便于与其他命令配合进行数据处理。
 
 ### 支持的命令类型
 - **单命令**: `grep`, `find`, `cat`
@@ -115,7 +119,8 @@ node tests/test.js
 
 ### 📍 管道位置检测
 - **识别逻辑**: 基于操作符位置和命令索引
-- **特殊处理**: `grep` 在管道接收端时放行
+- **配置化处理**: 支持 `allowInPipeReceiver` 配置字段，可配置命令在管道接收端位置时放行
+- **当前实现**: `grep` 和 `head` 命令在管道接收端位置自动放行
 - **安全保证**: 其他位置仍严格执行拦截
 
 ### 🔧 可扩展架构
@@ -134,10 +139,17 @@ node tests/test.js
 ```
 
 ### 验证步骤
-1. 复制修改文件到运行目录
-2. 执行测试套件验证功能
-3. 手动测试典型场景
-4. 确认自动化部署脚本正常
+1. **自动化部署**：在项目根目录执行 `.\scripts\deploy-plugin.bat`（Windows）或 `./scripts/deploy-plugin.sh`（Linux/macOS）
+2. **手动部署**：复制修改文件到运行目录
+3. **运行测试**：在插件目标目录执行 `node tests/test.js` 验证功能
+4. **手动测试**：测试典型场景，如 `grep` 和 `head` 在管道中的表现
+
+### 部署脚本位置
+- **脚本路径**：`项目根目录/scripts/deploy-plugin.bat`（Windows）或 `项目根目录/scripts/deploy-plugin.sh`（Linux/macOS）
+- **使用方式**：
+  - 默认执行：`deploy-plugin.bat`
+  - 指定参数：`deploy-plugin.bat bash-permission-hook claude-code-permissions-hook`
+- **功能**：自动读取版本号、同步文件、运行测试验证
 
 ## 开发指南
 

@@ -8,7 +8,8 @@
     {
       "pattern": "grep",
       "action": "reject",
-      "suggestion": "使用内置的Grep工具代替"
+      "suggestion": "使用内置的Grep工具代替",
+      "allowInPipeReceiver": true
     },
     {
       "pattern": "cat",
@@ -18,7 +19,8 @@
     {
       "pattern": "head",
       "action": "reject",
-      "suggestion": "使用内置的Read工具代替"
+      "suggestion": "使用内置的Read工具代替",
+      "allowInPipeReceiver": true
     },
     {
       "pattern": "tail",
