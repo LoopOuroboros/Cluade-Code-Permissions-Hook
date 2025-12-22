@@ -12,6 +12,15 @@
       "author": {
         "name": "LoopOuroboros"
       }
+    },
+    {
+      "name": "web-permission-hook",
+      "source": "./web-permission-hook",
+      "description": "Claude Code插件，拦截WebFetch和WebSearch工具调用并推荐使用Fetch MCP和Search MCP。提供简化的工具拦截机制，专注于Web工具的安全控制。",
+      "version": "1.0.0",
+      "author": {
+        "name": "LoopOuroboros"
+      }
     }
   ]
 }

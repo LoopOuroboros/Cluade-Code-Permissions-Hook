@@ -1,0 +1,5 @@
+{
+  "name": "web-permission-hook",
+  "version": "1.0.0",
+  "description": "Claude Code plugin that intercepts WebFetch and WebSearch tool calls and recommends using MCP tools"
+}

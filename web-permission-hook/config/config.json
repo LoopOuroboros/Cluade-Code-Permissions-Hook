@@ -1,0 +1,6 @@
+{
+  "toolMappings": {
+    "WebFetch": "使用 Fetch MCP 来代替",
+    "WebSearch": "使用 Search MCP 来代替"
+  }
+}
