@@ -97,46 +97,46 @@ function testPrefixMatching() {
         {
             name: '基础命令',
             input: 'find .',
-            expectedBlocked: true
+            expectedDecision: 'deny'
         },
         {
             name: '带路径的命令',
             input: '/usr/bin/find .',
-            expectedBlocked: true
+            expectedDecision: 'deny'
         },
         {
             name: '子命令',
             input: 'npm install express',
-            expectedBlocked: true
+            expectedDecision: 'deny'
         },
         {
             name: '带选项的命令',
             input: 'grep "test" file.txt',
-            expectedBlocked: true
+            expectedDecision: 'deny'
         },
         {
             name: '允许的命令',
             input: 'echo hello',
-            expectedBlocked: false
+            expectedDecision: 'allow'
         },
         {
             name: '允许的命令2',
             input: 'npm run build',
-            expectedBlocked: false
+            expectedDecision: 'allow'
         }
     ];
 
     let passed = 0;
     let failed = 0;
 
-    testCases.forEach(({ name, input, expectedBlocked }) => {
+    testCases.forEach(({ name, input, expectedDecision }) => {
         const result = checkCommand(input, rules);
-        const isMatch = result.isBlocked === expectedBlocked;
+        const isMatch = result.decision === expectedDecision;
 
         if (isMatch) {
             console.log(`✓ ${name}: 通过`);
             console.log(`  命令: "${input}"`);
-            console.log(`  状态: ${result.isBlocked ? '已拦截' : '已放行'}`);
+            console.log(`  状态: ${result.decision === 'deny' ? '已拦截' : '已放行'}`);
             if (result.message) {
                 console.log(`  消息: ${result.message}`);
             }
@@ -144,8 +144,8 @@ function testPrefixMatching() {
         } else {
             console.log(`✗ ${name}: 失败`);
             console.log(`  命令: "${input}"`);
-            console.log(`  期望: ${expectedBlocked ? '拦截' : '放行'}`);
-            console.log(`  实际: ${result.isBlocked ? '拦截' : '放行'}`);
+            console.log(`  期望: ${expectedDecision === 'deny' ? '拦截' : '放行'}`);
+            console.log(`  实际: ${result.decision === 'deny' ? '拦截' : '放行'}`);
             if (result.message) {
                 console.log(`  消息: ${result.message}`);
             }
@@ -463,7 +463,7 @@ function testCompleteFlow() {
 
         for (const cmd of commands) {
             const decision = checkCommand(cmd, rules);
-            if (decision.isBlocked) {
+            if (decision.decision === "deny") {
                 blocked = true;
                 blockedBy = cmd.trim().split(/\s+/)[0].replace(/^.*[\/\\]/, '');
                 break;

@@ -122,7 +122,7 @@ function splitCommands(command) {
  * @param {Object} options - 选项参数
  * @param {boolean} options.isPipeReceiver - 是否作为管道接收端
  * @param {string} options.commandName - 命令名称（用于显示）
- * @returns {Object} {isBlocked: boolean, message?: string}
+ * @returns {Object} {decision: "deny"|"allow", message?: string}
  */
 function checkCommand(cmd, rules, options = {}) {
     const {
@@ -153,19 +153,19 @@ function checkCommand(cmd, rules, options = {}) {
         if (cmdName.startsWith(rule.pattern + ' ') || cmdName === rule.pattern) {
             // 特殊处理：在管道接收端位置且允许的命令时跳过拦截
             if (isPipeReceiver && rule.allowInPipeReceiver) {
-                return { isBlocked: false };
+                return { decision: "allow" };
             }
 
             // 提取用于显示的命令名（只显示第一个词）
             const displayName = rule.pattern.split(' ')[0];
             return {
-                isBlocked: true,
+                decision: "deny",
                 message: `⚠️ ${displayName}命令被拦截，${rule.suggestion}`
             };
         }
     }
 
-    return { isBlocked: false };
+    return { decision: "allow" };
 }
 
 /**
@@ -194,7 +194,7 @@ function handleHook(input) {
                 commandName: cmd.trim().split(/\s+/)[0].replace(/^.*[\/\\]/, '')
             });
 
-            if (decision.isBlocked) {
+            if (decision.decision === "deny") {
                 return {
                     hookSpecificOutput: {
                         hookEventName: "PreToolUse",
