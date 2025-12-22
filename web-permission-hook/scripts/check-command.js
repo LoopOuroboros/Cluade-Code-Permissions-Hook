@@ -53,7 +53,13 @@ function handleHook(input) {
 
         // 如果工具名称为空，默认放行
         if (!toolName) {
-            return { decision: "approve" };
+            return {
+                hookSpecificOutput: {
+                    hookEventName: "PreToolUse",
+                    permissionDecision: "allow",
+                    permissionDecisionReason: "工具名称为空，已安全放行"
+                }
+            };
         }
 
         // 加载工具映射配置
@@ -64,18 +70,33 @@ function handleHook(input) {
 
         if (result.needReplace) {
             return {
-                decision: "block",
-                reason: result.message
+                hookSpecificOutput: {
+                    hookEventName: "PreToolUse",
+                    permissionDecision: "deny",
+                    permissionDecisionReason: result.message
+                }
             };
         }
 
         // 不需要替换，允许执行
-        return { decision: "approve" };
+        return {
+            hookSpecificOutput: {
+                hookEventName: "PreToolUse",
+                permissionDecision: "allow",
+                permissionDecisionReason: "工具检查通过，允许执行"
+            }
+        };
 
     } catch (error) {
         // 错误时默认放行
         console.error('Hook 错误:', error.message);
-        return { decision: "approve" };
+        return {
+            hookSpecificOutput: {
+                hookEventName: "PreToolUse",
+                permissionDecision: "allow",
+                permissionDecisionReason: "检查过程出错，已安全放行"
+            }
+        };
     }
 }
 
