@@ -176,53 +176,6 @@ echo   ✓ 成功同步目录：%success_count% 个
 echo   ⚠ 警告数量：%warn_count% 个
 echo.
 
-REM 询问是否运行测试
-set /p choice="是否运行测试验证功能？(Y/N) [默认: Y]: "
-if /i "%choice%"=="" set "choice=Y"
-if /i "%choice%"=="Y" (
-    echo.
-    echo ========================================
-    echo 正在运行测试套件...
-    echo ========================================
-    echo.
-
-    REM 检查测试文件是否存在
-    if not exist "%PLUGIN_DEST%\tests\test.js" (
-        echo ❌ 测试文件不存在！
-        echo   %PLUGIN_DEST%\tests\test.js
-        echo.
-        echo 请确保 tests/test.js 文件存在！
-    ) else (
-        cd /d "%PLUGIN_DEST%"
-        node tests/test.js
-        if %ERRORLEVEL% EQU 0 (
-            echo.
-            echo ✓ 测试运行成功！
-        ) else (
-            echo.
-            echo ⚠ 测试运行失败或出现错误！
-        )
-    )
-    echo.
-)
-
-REM 显示验证命令提示
-echo ========================================
-echo 部署验证提示
-echo ========================================
-echo.
-echo 您可以通过以下命令手动验证部署：
-echo.
-echo 1. 查看插件目录：
-echo    dir "%PLUGIN_DEST%"
-echo.
-echo 2. 运行测试：
-echo    cd /d "%PLUGIN_DEST%" && node tests/test.js
-echo.
-echo 3. 手动测试特殊场景：
-echo    echo '{"tool_input": {"command": "echo \"test\" ^| grep \"test\""}}' ^| node "%PLUGIN_DEST%\scripts\check-command.js"
-echo    echo '{"tool_input": {"command": "grep \"test\" file.txt"}}' ^| node "%PLUGIN_DEST%\scripts\check-command.js"
-echo.
-
-echo 按任意键退出...
-pause >nul
+echo ================================
+echo 部署完成！
+echo ================================

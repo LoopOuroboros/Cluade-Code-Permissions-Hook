@@ -92,29 +92,3 @@ echo
 echo "================================="
 echo "部署完成！"
 echo "================================="
-echo
-
-# 询问是否运行测试
-echo -n "是否运行测试验证功能？(y/N): "
-read -r choice
-if [[ "$choice" =~ ^[Yy]$ ]]; then
-    echo
-    echo "正在运行测试套件..."
-    echo
-    cd "$PLUGIN_DEST" || exit 1
-    if [ -f "tests/test.js" ]; then
-        node tests/test.js
-        if [ $? -eq 0 ]; then
-            echo
-            echo "✓ 测试运行成功！"
-        else
-            echo
-            echo "⚠ 测试运行失败或出现错误！"
-        fi
-    else
-        echo "测试文件不存在：tests/test.js"
-    fi
-fi
-
-echo
-echo "部署脚本执行完毕！"
