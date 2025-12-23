@@ -14,7 +14,8 @@
     {
       "pattern": "cat",
       "decision": "deny",
-      "suggestion": "使用内置的Read工具代替"
+      "suggestion": "使用内置的Read工具代替",
+      "allowInPipeReceiver": true
     },
     {
       "pattern": "head",

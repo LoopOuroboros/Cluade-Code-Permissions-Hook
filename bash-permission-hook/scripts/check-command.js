@@ -195,13 +195,8 @@ function handleHook(input) {
             });
 
             if (decision.decision === "deny") {
-                return {
-                    hookSpecificOutput: {
-                        hookEventName: "PreToolUse",
-                        permissionDecision: "deny",
-                        permissionDecisionReason: decision.message
-                    }
-                };
+                // 返回用户可见的友好提示
+                return decision.message;
             }
         }
 
