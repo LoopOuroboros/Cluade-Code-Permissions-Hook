@@ -18,134 +18,57 @@ function loadRules() {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         return config.rules || [];
     } catch (error) {
-        console.error('Failed to load rules:', error.message);
+        // 遵循宪法：在错误时默认放行，不输出技术错误信息
         return [];
     }
 }
 
 /**
- * 扩展的命令拆分函数，返回拆分信息和操作符位置
- * @param {string} command - 原始Bash命令
- * @returns {Object} {commands: Array<string>, splits: Array<Object>}
- */
-function splitCommandsWithSplits(command) {
-    // 操作符定义（按优先级排序）
-    const operators = ['&&', '||', '|'];
-
-    // 第一步：查找所有操作符位置
-    const splits = [];
-    let currentPos = 0;
-
-    while (currentPos < command.length) {
-        let foundOp = null;
-        let foundPos = -1;
-
-        for (const op of operators) {
-            const pos = command.indexOf(op, currentPos);
-            if (pos !== -1 && (foundPos === -1 || pos < foundPos)) {
-                foundOp = op;
-                foundPos = pos;
-            }
-        }
-
-        if (foundOp === null) {
-            break;
-        }
-
-        splits.push({
-            pos: foundPos,
-            op: foundOp,
-            len: foundOp.length
-        });
-
-        currentPos = foundPos + foundOp.length;
-    }
-
-    // 第二步：按位置排序，确保执行顺序
-    splits.sort((a, b) => a.pos - b.pos);
-
-    // 第三步：切分命令
-    const commands = [];
-    let start = 0;
-
-    for (const split of splits) {
-        const cmd = command.substring(start, split.pos).trim();
-        if (cmd) {
-            commands.push(cmd);
-        }
-        start = split.pos + split.len;
-    }
-
-    // 第四步：添加最后一个命令
-    const lastCmd = command.substring(start).trim();
-    if (lastCmd) {
-        commands.push(lastCmd);
-    }
-
-    return {
-        commands: commands,
-        splits: splits
-    };
-}
-
-/**
- * 检查命令是否作为管道的接收端
- * @param {string} command - 完整的原始命令
- * @param {number} cmdIndex - 当前命令在拆分数组中的索引
- * @param {Array} allCommands - 所有拆分后的命令数组
- * @param {Array} originalSplits - 原始拆分信息（操作符位置）
+ * 检查命令是否作为管道接收端
+ * @param {number} arrayIndex - 命令在 parts 数组中的索引位置
+ * @param {Array} partArray - 拆分后的 parts 数组（[cmd0, op, cmd1, op, cmd2]）
  * @returns {boolean} 是否作为管道接收端
  */
-function isInPipeReceiver(command, cmdIndex, allCommands, originalSplits) {
-    // 如果不是第一个命令，且前一个操作符是管道符，则作为接收端
-    if (cmdIndex > 0 && cmdIndex <= originalSplits.length) {
-        const prevSplit = originalSplits[cmdIndex - 1];
-        return prevSplit && prevSplit.op === '|';
-    }
-    return false;
+function isInPipeReceiver(arrayIndex, partArray) {
+    // 如果不是第一个命令，且前一个元素是管道符，则当前命令作为接收端
+    return arrayIndex > 0 && partArray[arrayIndex - 1] === '|';
 }
 
 /**
- * 拆分复合命令
- * @param {string} command - 原始Bash命令
- * @returns {Array<string>} 拆分后的命令数组
+ * 提取命令名（支持多词）
+ * @param {string} cmd - 命令字符串
+ * @returns {string} 处理后的命令名
  */
-function splitCommands(command) {
-    const result = splitCommandsWithSplits(command);
-    return result.commands;
+function extractCommandName(cmd) {
+    const trimmed = cmd.trim();
+    const firstSpace = trimmed.indexOf(' ');
+
+    if (firstSpace === -1) {
+        // 单词命令，移除路径前缀
+        return trimmed.replace(/^.*[\/\\]/, '');
+    } else {
+        // 多词命令，保留前两个词（用于匹配 "npm install"）
+        const firstWord = trimmed.substring(0, firstSpace).replace(/^.*[\/\\]/, '');
+        const secondWord = trimmed.substring(firstSpace + 1);
+        const secondSpacePos = secondWord.indexOf(' ');
+        const second = secondSpacePos === -1 ? secondWord : secondWord.substring(0, secondSpacePos);
+        return firstWord + ' ' + second;
+    }
 }
 
 /**
- * 检查单个命令是否被拦截
+ * 检查单个命令是否被拦截或需要询问
  * @param {string} cmd - 命令字符串
  * @param {Array} rules - 拦截规则数组
  * @param {Object} options - 选项参数
  * @param {boolean} options.isPipeReceiver - 是否作为管道接收端
- * @param {string} options.commandName - 命令名称（用于显示）
- * @returns {Object} {decision: "deny"|"allow", message?: string}
+ * @returns {Object} {decision: "allow"|"deny"|"ask", message?: string}
  */
 function checkCommand(cmd, rules, options = {}) {
-    const {
-        isPipeReceiver = false,
-        commandName = null
-    } = options;
+    const { isPipeReceiver = false } = options;
 
     // 提取命令名（支持多词）
-    let cmdName = cmd.trim();
-
-    // 移除路径前缀
-    const firstSpace = cmdName.indexOf(' ');
-    if (firstSpace === -1) {
-        // 单词命令
-        cmdName = cmdName.replace(/^.*[\/\\]/, '');
-    } else {
-        // 多词命令，保留前两个词（用于匹配 "npm install"）
-        const firstWord = cmdName.substring(0, firstSpace).replace(/^.*[\/\\]/, '');
-        const secondWord = cmdName.substring(firstSpace + 1);
-        const spacePos = secondWord.indexOf(' ');
-        const second = spacePos === -1 ? secondWord : secondWord.substring(0, spacePos);
-        cmdName = firstWord + ' ' + second;
-    }
+    const cmdName = extractCommandName(cmd);
 
     // 查找匹配规则
     for (const rule of rules) {
@@ -158,10 +81,19 @@ function checkCommand(cmd, rules, options = {}) {
 
             // 提取用于显示的命令名（只显示第一个词）
             const displayName = rule.pattern.split(' ')[0];
-            return {
-                decision: "deny",
-                message: `⚠️ ${displayName}命令被拦截，${rule.suggestion}`
-            };
+
+            // 根据规则决策返回不同结果
+            if (rule.decision === "ask") {
+                return {
+                    decision: rule.decision,
+                    systemMessage: `⚠️ ${displayName}命令需要确认：${rule.suggestion}`
+                };
+            } else {
+                return {
+                    decision: rule.decision,
+                    permissionDecisionReason: `⚠️ ${displayName}命令被拦截，${rule.suggestion}`
+                };
+            }
         }
     }
 
@@ -178,45 +110,61 @@ function handleHook(input) {
         // 提取command字段
         const fullCommand = input.tool_input.command;
 
-        // 使用新的拆分函数获取命令和操作符信息
-        const { commands: splitCommands, splits } = splitCommandsWithSplits(fullCommand);
+        // 使用简单分割：分割操作符，生成 [cmd0, op, cmd1, op, cmd2] 数组
+        const parts = fullCommand.split(/\s*(\|\||&&|\|)\s*/);
 
         // 加载规则
         const rules = loadRules();
 
-        // 按顺序检查每个命令
-        for (let i = 0; i < splitCommands.length; i++) {
-            const cmd = splitCommands[i];
-            const isPipeReceiver = isInPipeReceiver(cmd, i, splitCommands, splits);
+        // 按顺序检查每个命令（偶数索引是命令）
+        for (let i = 0; i < parts.length; i += 2) {
+            const cmd = parts[i].trim();
+            if (!cmd) continue;
+
+            const isPipeReceiver = isInPipeReceiver(i, parts);
 
             const decision = checkCommand(cmd, rules, {
-                isPipeReceiver: isPipeReceiver,
-                commandName: cmd.trim().split(/\s+/)[0].replace(/^.*[\/\\]/, '')
+                isPipeReceiver: isPipeReceiver
             });
 
-            if (decision.decision === "deny") {
-                // 返回用户可见的友好提示
-                return decision.message;
+            // "allow" 决策继续检查下一个命令
+            if (decision.decision != "allow") {
+                const output = {
+                    continue: true,
+                    hookSpecificOutput: {
+                        hookEventName: "PreToolUse",
+                        permissionDecision: decision.decision
+                    }
+                };
+
+                // 根据决策类型将消息放在正确的字段中
+                if (decision.decision === "ask") {
+                    output.systemMessage = decision.systemMessage;
+                } else {
+                    output.hookSpecificOutput.permissionDecisionReason = decision.permissionDecisionReason;
+                }
+
+                return output;
             }
         }
 
         // 全部通过，允许执行
         return {
+            continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
-                permissionDecision: "allow",
-                permissionDecisionReason: "命令通过安全检查"
+                permissionDecision: "allow"
             }
         };
 
     } catch (error) {
-        // 错误处理：默认放行
-        console.error('Hook error:', error.message);
+        // 错误处理：默认放行，不显示技术错误信息
         return {
+            continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
                 permissionDecision: "allow",
-                permissionDecisionReason: "检查过程中发生错误，已安全放行"
+                permissionDecisionReason: "钩子执行出错，允许执行"
             }
         };
     }
@@ -240,13 +188,13 @@ function main() {
         process.stdin.on('end', () => {
             input = JSON.parse(data);
             const result = handleHook(input);
-            console.log(JSON.stringify(result));
+            process.stdout.write(JSON.stringify(result));
         });
         return;
     }
 
     const result = handleHook(input);
-    console.log(JSON.stringify(result));
+    process.stdout.write(JSON.stringify(result));
 }
 
 // 运行
@@ -256,8 +204,7 @@ if (require.main === module) {
 
 module.exports = {
     handleHook,
-    splitCommands,
-    splitCommandsWithSplits,
+    extractCommandName,
     isInPipeReceiver,
     checkCommand,
     loadRules
