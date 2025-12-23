@@ -73,6 +73,8 @@ process-logs/
 
 # Claude Code
 .claude/
+!.claude/rules/constitution.md
+!.claude/rules/*.md
 
 # GitHub Spec Kit
 .specify/
