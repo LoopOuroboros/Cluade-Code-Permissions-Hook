@@ -56,8 +56,7 @@ function handleHook(input) {
                 continue: true,
                 hookSpecificOutput: {
                     hookEventName: "PreToolUse",
-                    permissionDecision: "allow",
-                    permissionDecisionReason: "工具通过安全检查"
+                    permissionDecision: "allow"
                 }
             };
         }
@@ -84,8 +83,7 @@ function handleHook(input) {
             continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
-                permissionDecision: "allow",
-                permissionDecisionReason: "工具通过安全检查"
+                permissionDecision: "allow"
             }
         };
 
@@ -95,8 +93,7 @@ function handleHook(input) {
             continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
-                permissionDecision: "allow",
-                permissionDecisionReason: "工具通过安全检查"
+                permissionDecision: "allow"
             }
         };
     }

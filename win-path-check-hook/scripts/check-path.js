@@ -17,8 +17,7 @@ function checkWindowsPath(input) {
             continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
-                permissionDecision: "allow",
-                permissionDecisionReason: "路径格式正确"
+                permissionDecision: "allow"
             }
         };
     }
@@ -47,8 +46,7 @@ function checkWindowsPath(input) {
         continue: true,
         hookSpecificOutput: {
             hookEventName: "PreToolUse",
-            permissionDecision: "allow",
-            permissionDecisionReason: "路径格式正确"
+            permissionDecision: "allow"
         }
     };
 }
