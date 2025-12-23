@@ -11,9 +11,16 @@ function checkWindowsPath(input) {
     // 提取命令字符串
     const command = input.tool_input?.command || input.command || '';
 
-    // 如果命令为空或不含反斜杠，直接放行
+    // 如果命令为空或不含反斜杠，直接放行（不显示任何提示）
     if (!command || !command.includes('\\')) {
-        return { decision: 'approve' };
+        return {
+            continue: true,
+            hookSpecificOutput: {
+                hookEventName: "PreToolUse",
+                permissionDecision: "allow",
+                permissionDecisionReason: "路径格式正确"
+            }
+        };
     }
 
     // 检测未转义的反斜杠模式
@@ -24,10 +31,10 @@ function checkWindowsPath(input) {
         const fixedCommand = fixWindowsPaths(command);
 
         return {
+            continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
                 permissionDecision: "allow",
-                permissionDecisionReason: "已自动将Windows路径转换为正斜杠格式以避免解析错误",
                 updatedInput: {
                     command: fixedCommand
                 }
@@ -35,25 +42,15 @@ function checkWindowsPath(input) {
         };
     }
 
-    return { decision: 'approve' };
-}
-
-/**
- * 生成错误提示信息
- */
-function generateErrorMessage(command) {
-    // 从命令中提取Windows路径
-    const paths = extractWindowsPaths(command);
-
-    if (paths.length === 0) {
-        return '⚠️ 检测到Windows路径可能存在未转义的反斜杠';
-    }
-
-    // 提取第一个路径作为示例
-    const originalPath = paths[0];
-    const fixedPath = originalPath.replace(/\\/g, '/');
-
-    return `⚠️ 检测到Windows路径中未转义的反斜杠\n\n原始路径: ${originalPath}\n修正路径: ${fixedPath}`;
+    // 没有未转义反斜杠，直接放行（不显示任何提示）
+    return {
+        continue: true,
+        hookSpecificOutput: {
+            hookEventName: "PreToolUse",
+            permissionDecision: "allow",
+            permissionDecisionReason: "路径格式正确"
+        }
+    };
 }
 
 /**
@@ -111,47 +108,6 @@ function fixWindowsPaths(command) {
     return fixedCommand;
 }
 
-/**
- * 生成修正建议
- */
-function generateSuggestion(command) {
-    // 从命令中提取Windows路径并只修正路径部分
-    const paths = extractWindowsPaths(command);
-
-    if (paths.length === 0) {
-        return '请将路径中的反斜杠 (\\) 替换为正斜杠 (/)';
-    }
-
-    // 修正所有找到的路径
-    let fixedCommand = command;
-    const pathReplacements = new Map();
-
-    paths.forEach(path => {
-        const fixed = path.replace(/\\/g, '/');
-        pathReplacements.set(path, fixed);
-    });
-
-    // 执行替换（倒序替换避免位置变化）
-    Array.from(pathReplacements.keys())
-        .sort((a, b) => b.length - a.length)
-        .forEach(original => {
-            const fixed = pathReplacements.get(original);
-            fixedCommand = fixedCommand.split(original).join(fixed);
-        });
-
-    // 构建简洁的修正建议
-    let suggestion = '修正建议:\n';
-    paths.forEach((path, index) => {
-        const fixed = path.replace(/\\/g, '/');
-        suggestion += `${index + 1}) ${path} → ${fixed}\n`;
-    });
-
-    suggestion += '\n在Bash中优先使用正斜杠 (/)';
-    suggestion += `\n\n完整修正命令:\n${fixedCommand}`;
-
-    return suggestion;
-}
-
 // CLI入口点 - 支持标准输入和命令行参数
 if (require.main === module) {
     let input = {};
@@ -174,7 +130,7 @@ if (require.main === module) {
 
             // 执行检测并输出结果
             const result = checkWindowsPath(input);
-            console.log(JSON.stringify(result));
+            process.stdout.write(JSON.stringify(result));
         });
     } else {
         // 直接从命令行参数读取
@@ -186,7 +142,7 @@ if (require.main === module) {
             }
         }
         const result = checkWindowsPath(input);
-        console.log(JSON.stringify(result));
+        process.stdout.write(JSON.stringify(result));
     }
 }
 
