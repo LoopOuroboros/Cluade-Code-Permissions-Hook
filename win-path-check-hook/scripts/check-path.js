@@ -3,6 +3,10 @@
  * 功能：检测Bash命令中未转义的'\'字符，自动修正为正斜杠格式并放行
  * 利用PreToolUse Hook的updatedInput机制实现无感知的路径自动修正
  */
+
+/**
+ * 检测命令中是否包含Windows风格的未转义反斜杠
+ */
 function checkWindowsPath(input) {
     // 提取命令字符串
     const command = input.tool_input?.command || input.command || '';
@@ -58,32 +62,15 @@ function generateErrorMessage(command) {
 function extractWindowsPaths(command) {
     const paths = [];
 
-    // 1. UNC 路径 (例如 \\server\share)
-    // 匹配以 \\ 开头，包含至少一个额外 \ 的非非法字符序列
-    const uncPaths = command.match(/(?:^|\s)\\\\[^\\?*"]+(?:\\[^\\?*"]+)+/g);
-    if (uncPaths) {
-        uncPaths.forEach(p => paths.push(p.trim()));
-    }
-
-    // 2. 绝对路径 (例如 C:\Windows)
-    // 允许空格以匹配 "Program Files"
-    const absolutePaths = command.match(/[A-Za-z]:\\[^\\?*"]*(?:\\[^\\?*"]*)*/g);
+    // 匹配Windows风格路径的模式
+    // 1. 绝对路径: C:\, D:\ 等
+    const absolutePaths = command.match(/[A-Za-z]:\\[^\\]*(?:\\[^\\]*)*/g);
     if (absolutePaths) {
         paths.push(...absolutePaths);
     }
 
-    // 3. 显式相对路径 (例如 .\My Documents 或 ..\Data 或 ~\Desktop)
-    // 允许空格，但必须以 .\ 或 ..\ 或 ~\ 开头，且包含至少一个后续反斜杠
-    const explicitRelativePaths = command.match(/(?:^|\s)(?:\.{1,2}|~)\\[^\\?*"]+(?:\\[^\\?*"]+)+/g);
-    if (explicitRelativePaths) {
-        explicitRelativePaths.forEach(p => paths.push(p.trim()));
-    }
-
-    // 4. 其他相对路径
-    // 保持原有逻辑：不匹配包含空格的路径，避免误伤命令参数
-    // 排除已匹配的 explicitRelativePaths (通过去重处理，但正则本身重叠可能导致部分匹配)
-    // 为了安全，这里仍然只匹配不含空格的
-    const relativePaths = command.match(/(?:^|\s)(?!\.|~)[^\s\\?:*"]+\\+(?:[^\\?:*"\s]+\\*)+/g);
+    // 2. 相对路径中的反斜杠
+    const relativePaths = command.match(/(?:^|\s)[^\s\\?:*"]+\\+(?:[^\\?:*"\s]+\\*)+/g);
     if (relativePaths) {
         relativePaths.forEach(path => {
             paths.push(path.trim());
@@ -108,47 +95,16 @@ function fixWindowsPaths(command) {
     let fixedCommand = command;
     const pathReplacements = new Map();
 
-    paths.forEach(original => {
-        let fixed = original;
-        
-        // 1. 处理 UNC 路径 (\\server -> //server)
-        if (original.startsWith('\\\\')) {
-            // 保留开头的 //，其余反斜杠转为正斜杠
-            fixed = '//' + original.substring(2).replace(/\\+/g, '/');
-        } else {
-            // 2. 普通路径：将所有反斜杠(包括连续的)替换为单斜杠
-            fixed = original.replace(/\\+/g, '/');
-        }
-
-        // 3. 智能引用：如果路径包含空格且未被引号包裹，添加引号
-        if (fixed.includes(' ')) {
-            // 简单的上下文检查：如果原路径在命令中没有被引号包围
-            // 这里的检查比较保守，避免双重引用
-            const escapedOriginal = original.replace(/\\/g, '\\\\');
-            // 检查前后是否有引号 (简单启发式)
-            const parts = fixedCommand.split(original);
-            if (parts.length >= 2) {
-                const prefix = parts[0];
-                const suffix = parts[1];
-                const hasQuoteBefore = /["']$/.test(prefix);
-                const hasQuoteAfter = /^["']/.test(suffix);
-                
-                if (!hasQuoteBefore || !hasQuoteAfter) {
-                    fixed = `"${fixed}"`;
-                }
-            }
-        }
-        
-        pathReplacements.set(original, fixed);
+    paths.forEach(path => {
+        const fixed = path.replace(/\\/g, '/');
+        pathReplacements.set(path, fixed);
     });
 
     // 执行替换（倒序替换避免位置变化）
-    // 注意：需要按长度排序，优先替换长路径
     Array.from(pathReplacements.keys())
         .sort((a, b) => b.length - a.length)
         .forEach(original => {
             const fixed = pathReplacements.get(original);
-            // 使用 split/join 进行全局替换
             fixedCommand = fixedCommand.split(original).join(fixed);
         });
 

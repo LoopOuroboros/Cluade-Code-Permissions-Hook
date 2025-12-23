@@ -80,36 +80,6 @@ const tests = [
         input: { tool_input: { command: 'cd C:\\Users\\test\\' } },
         expected: { permissionDecision: 'allow', fixedCommand: 'cd C:/Users/test/' },
         category: '自动修正测试'
-    },
-    {
-        name: '测试13: UNC 网络路径不应转换前缀',
-        input: { tool_input: { command: 'cat \\\\server\\share\\file.txt' } },
-        expected: { permissionDecision: 'allow', fixedCommand: 'cat //server/share/file.txt' },
-        category: 'UNC路径测试'
-    },
-    {
-        name: '测试14: 双重转义正确处理',
-        input: { tool_input: { command: 'cat C:\\\\Windows\\\\System' } },
-        expected: { permissionDecision: 'allow', fixedCommand: 'cat C:/Windows/System' },
-        category: '转义测试'
-    },
-    {
-        name: '测试15: 管道命令中的路径转换',
-        input: { tool_input: { command: 'echo "test" | cat .\\data\\file.txt' } },
-        expected: { permissionDecision: 'allow', fixedCommand: 'echo "test" | cat ./data/file.txt' },
-        category: '管道测试'
-    },
-    {
-        name: '测试16: 包含空格的相对路径自动引用',
-        input: { tool_input: { command: 'cat .\\My Documents\\file.txt' } },
-        expected: { permissionDecision: 'allow', fixedCommand: 'cat "./My Documents/file.txt"' },
-        category: '智能引用测试'
-    },
-    {
-        name: '测试17: 包含空格的绝对路径自动引用',
-        input: { tool_input: { command: 'cd C:\\Program Files\\app' } },
-        expected: { permissionDecision: 'allow', fixedCommand: 'cd "C:/Program Files/app"' },
-        category: '智能引用测试'
     }
 ];
 
@@ -117,15 +87,7 @@ const tests = [
 let totalTests = tests.length;
 let passedTests = 0;
 let failedTests = 0;
-const results = { 
-    '自动修正测试': { pass: 0, fail: 0 }, 
-    '放行测试': { pass: 0, fail: 0 }, 
-    '边界测试': { pass: 0, fail: 0 },
-    'UNC路径测试': { pass: 0, fail: 0 },
-    '转义测试': { pass: 0, fail: 0 },
-    '管道测试': { pass: 0, fail: 0 },
-    '智能引用测试': { pass: 0, fail: 0 }
-};
+const results = { '自动修正测试': { pass: 0, fail: 0 }, '放行测试': { pass: 0, fail: 0 }, '边界测试': { pass: 0, fail: 0 } };
 
 console.log('开始执行测试用例...\n');
 
