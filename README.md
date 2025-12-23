@@ -33,7 +33,9 @@ Claude-Code 权限钩子插件通过智能钩子系统拦截危险的 Bash 命�
 
 2. 安装插件：
 ```bash
-/plugin install LoopOuroboros@Cluade-Code-Permissions-Hook
+/plugin install bash-permission-hook@cluade-code-permissions-hook
+/plugin install web-permission-hook@cluade-code-permissions-hook
+/plugin install win-path-check-hook@cluade-code-permissions-hook
 ```
 
 3. 重启 Claude Code 使插件生效
@@ -48,7 +50,7 @@ git clone https://github.com/LoopOuroboros/Cluade-Code-Permissions-Hook.git
 2. 同步代码到实际插件运行目录（仅用于开发调试）：
 ```powershell
 # Windows
-.\.claude\rules\deploy-plugin.bat
+.\.claude\rules\deploy-plugin.ps1
 
 # Linux/macOS
 ./.claude/rules/deploy-plugin.sh
@@ -85,19 +87,6 @@ grep "pattern" file.txt
 │   └── tests/test.js              # 测试套件
 ├── .claude/rules/                 # 部署规则
 └── docs/                          # 设计文档
-```
-
-## 🧪 测试验证
-
-运行测试套件：
-```bash
-cd bash-permission-hook
-node tests/test.js
-```
-
-手动测试示例：
-```bash
-echo '{"tool_input": {"command": "echo \"test\" | grep \"test\""}}' | node scripts/check-command.js
 ```
 
 ## 📄 许可证

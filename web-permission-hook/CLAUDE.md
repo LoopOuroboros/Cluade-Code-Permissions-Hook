@@ -1,6 +1,8 @@
+[根目录](../../CLAUDE.md) > **web-permission-hook**
+
 # Web Permission Hook 模块
 
-> 🏠 [返回项目根目录](../CLAUDE.md)
+> 🏠 [返回项目根目录](../../CLAUDE.md)
 
 ## 模块概述
 
@@ -56,27 +58,6 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 #### `checkToolReplacement(toolName, mappings)`
 检查工具是否需要替换，返回决策和建议
 
-## 测试系统
-
-### 测试文件
-- `tests/test.js` - Web 工具拦截功能测试套件
-
-### 运行测试
-```bash
-# 直接执行测试
-node tests/test.js
-
-# 手动测试功能
-echo '{"tool_name": "WebFetch"}' | node scripts/check-command.js
-```
-
-### 测试覆盖
-- ✅ WebFetch 工具拦截
-- ✅ WebSearch 工具拦截
-- ✅ 工具映射配置加载
-- ✅ 错误处理和默认放行
-- ✅ 非目标工具放行验证
-
 ## 关键文件
 
 ### 🎯 `scripts/check-command.js`
@@ -84,9 +65,6 @@ echo '{"tool_name": "WebFetch"}' | node scripts/check-command.js
 
 ### ⚙️ `config/config.json`
 **配置文件** - 定义工具映射规则和替代建议
-
-### 🧪 `tests/test.js`
-**测试文件** - 自动化测试用例
 
 ### 🎣 `hooks/hooks.json`
 **钩子配置** - Claude Code Web 工具钩子注册
@@ -150,33 +128,21 @@ echo '{"tool_name": "WebFetch"}' | node scripts/check-command.js
 
 运行目录格式：
 ```
-~/.claude/plugins/cache/claude-code-permissions-hook/web-permission-hook/1.0.0/
+~/.claude/plugins/cache/claude-code-permissions-hook/web-permission-hook/1.1.0/
 ```
 
-### 验证步骤
-1. 复制修改文件到运行目录
-2. 执行测试套件验证功能
-3. 手动测试 WebFetch 和 WebSearch 拦截
-4. 确认 MCP 替代建议正确显示
-
-### 部署验证
-```bash
-# 测试 WebFetch 拦截
-echo '{"tool_name": "WebFetch"}' | node scripts/check-command.js
-# 预期: {"decision":"block","reason":"⚠️ WebFetch 工具被拦截，使用 Fetch MCP 来代替"}
-
-# 测试非目标工具放行
-echo '{"tool_name": "Read"}' | node scripts/check-command.js
-# 预期: {"decision":"approve"}
-```
+### 手动测试
+在 Claude Code 真实环境中测试：
+- WebFetch 工具拦截功能
+- WebSearch 工具拦截功能
+- 确认 MCP 替代建议正确显示
 
 ## 开发指南
 
 ### 添加新工具映射
 1. 在 `config/config.json` 中添加新的工具映射
-2. 在 `tests/test.js` 中添加对应测试用例
-3. 验证拦截提示信息的准确性
-4. 更新文档（如需要）
+2. 在 Claude Code 环境中验证拦截提示信息的准确性
+3. 更新文档（如需要）
 
 ### 调试技巧
 ```javascript
@@ -203,11 +169,23 @@ console.log('决策输出:', result);
 
 ## 版本信息
 
-- **当前版本**: 1.0.0
+- **当前版本**: 1.1.0
 - **兼容性**: Node.js >= 14.0.0
-- **最后更新**: 2025-12-22
+- **最后更新**: 2025-12-23
 - **项目状态**: ✅ 生产就绪
+
+## 📋 变更记录 (Changelog)
+
+### 2025-12-23 15:34:56
+- 🧭 添加导航面包屑
+- 📊 更新模块状态为生产就绪
+- 🔗 完善与根目录文档的链接
+
+### 2025-12-22
+- ✨ 初始版本创建
+- 🌐 建立 Web 工具拦截机制
+- 📚 完善 MCP 集成文档
 
 ---
 
-> 🏠 [返回项目根目录](../CLAUDE.md) | 📄 [Bash 模块文档](../bash-permission-hook/CLAUDE.md)
+> 🏠 [返回项目根目录](../../CLAUDE.md) | 🔧 [Bash 模块文档](../bash-permission-hook/CLAUDE.md) | 🪟 [Win Path 模块文档](../win-path-check-hook/CLAUDE.md)
