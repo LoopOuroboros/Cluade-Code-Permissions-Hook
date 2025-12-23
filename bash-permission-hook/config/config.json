@@ -2,47 +2,49 @@
   "rules": [
     {
       "pattern": "find",
-      "action": "reject",
+      "decision": "deny",
       "suggestion": "使用内置的Glob工具代替"
     },
     {
       "pattern": "grep",
-      "action": "reject",
-      "suggestion": "使用内置的Grep工具代替"
+      "decision": "deny",
+      "suggestion": "使用内置的Grep工具代替",
+      "allowInPipeReceiver": true
     },
     {
       "pattern": "cat",
-      "action": "reject",
+      "decision": "deny",
       "suggestion": "使用内置的Read工具代替"
     },
     {
       "pattern": "head",
-      "action": "reject",
-      "suggestion": "使用内置的Read工具代替"
+      "decision": "deny",
+      "suggestion": "使用内置的Read工具代替",
+      "allowInPipeReceiver": true
     },
     {
       "pattern": "tail",
-      "action": "reject",
+      "decision": "deny",
       "suggestion": "使用内置的Read工具代替"
     },
     {
       "pattern": "sed",
-      "action": "reject",
+      "decision": "deny",
       "suggestion": "使用内置的Edit工具代替"
     },
     {
       "pattern": "awk",
-      "action": "reject",
+      "decision": "deny",
       "suggestion": "使用内置的Grep和Read工具组合代替"
     },
     {
       "pattern": "curl",
-      "action": "reject",
+      "decision": "deny",
       "suggestion": "使用内置的WebFetch工具代替"
     },
     {
       "pattern": "wget",
-      "action": "reject",
+      "decision": "deny",
       "suggestion": "使用内置的WebSearch工具代替"
     }
   ]

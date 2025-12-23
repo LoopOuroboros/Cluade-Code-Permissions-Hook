@@ -73,6 +73,8 @@ process-logs/
 
 # Claude Code
 .claude/
+!.claude/rules/constitution.md
+!.claude/rules/*.md
 
 # GitHub Spec Kit
 .specify/
@@ -84,3 +86,10 @@ docs/
 # Misc
 *.zip
 *.tar.gz
+
+# Markdown files - ignore all .md files except specified exceptions
+# First ignore all .md files
+*.md
+# Then unignore specific required files
+!*/CLAUDE.md
+!/README.md
