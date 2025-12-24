@@ -8,19 +8,19 @@
       "name": "bash-permission-hook",
       "source": "./bash-permission-hook",
       "description": "Claude Code插件，拦截危险的Bash命令并推荐Claude内置工具。支持命令拆分、前缀匹配、多词命令识别等完整功能。",
-      "version": "1.1.0"
+      "version": "1.2.0"
     },
     {
       "name": "web-permission-hook",
       "source": "./web-permission-hook",
       "description": "Claude Code插件，拦截WebFetch和WebSearch工具调用并推荐使用Fetch MCP和Search MCP。提供简化的工具拦截机制，专注于Web工具的安全控制。",
-      "version": "1.1.0"
+      "version": "1.2.0"
     },
     {
       "name": "win-path-check-hook",
       "source": "./win-path-check-hook",
       "description": "Windows路径自动修正插件，在Claude Code中自动将反斜杠路径转换为正斜杠，确保跨平台兼容性。",
-      "version": "1.0.0"
+      "version": "1.2.0"
     }
   ]
 }

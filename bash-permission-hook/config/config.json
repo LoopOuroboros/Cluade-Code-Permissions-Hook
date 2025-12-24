@@ -24,6 +24,12 @@
       "allowInPipeReceiver": true
     },
     {
+      "pattern": "echo",
+      "decision": "deny",
+      "suggestion": "使用内置的Write工具代替",
+      "allowInPipeReceiver": true
+    },
+    {
       "pattern": "tail",
       "decision": "deny",
       "suggestion": "使用内置的Read工具代替"
@@ -47,6 +53,11 @@
       "pattern": "wget",
       "decision": "deny",
       "suggestion": "使用内置的WebSearch工具代替"
+    },
+    {
+      "pattern": "rm",
+      "decision": "ask",
+      "suggestion": "询问用户是否可以删除"
     }
   ]
 }

@@ -18,7 +18,6 @@ function loadToolMappings() {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         return config.toolMappings || {};
     } catch (error) {
-        console.error('配置加载失败:', error.message);
         return {};
     }
 }
@@ -54,10 +53,10 @@ function handleHook(input) {
         // 如果工具名称为空，默认放行
         if (!toolName) {
             return {
+                continue: true,
                 hookSpecificOutput: {
                     hookEventName: "PreToolUse",
-                    permissionDecision: "allow",
-                    permissionDecisionReason: "工具名称为空，已安全放行"
+                    permissionDecision: "allow"
                 }
             };
         }
@@ -70,6 +69,7 @@ function handleHook(input) {
 
         if (result.needReplace) {
             return {
+                continue: true,
                 hookSpecificOutput: {
                     hookEventName: "PreToolUse",
                     permissionDecision: "deny",
@@ -80,21 +80,20 @@ function handleHook(input) {
 
         // 不需要替换，允许执行
         return {
+            continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
-                permissionDecision: "allow",
-                permissionDecisionReason: "工具检查通过，允许执行"
+                permissionDecision: "allow"
             }
         };
 
     } catch (error) {
-        // 错误时默认放行
-        console.error('Hook 错误:', error.message);
+        // 错误处理：默认放行，不显示技术错误信息
         return {
+            continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
-                permissionDecision: "allow",
-                permissionDecisionReason: "检查过程出错，已安全放行"
+                permissionDecision: "allow"
             }
         };
     }
@@ -118,13 +117,13 @@ function main() {
         process.stdin.on('end', () => {
             input = JSON.parse(data);
             const result = handleHook(input);
-            console.log(JSON.stringify(result));
+            process.stdout.write(JSON.stringify(result));
         });
         return;
     }
 
     const result = handleHook(input);
-    console.log(JSON.stringify(result));
+    process.stdout.write(JSON.stringify(result));
 }
 
 // 运行

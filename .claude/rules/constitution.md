@@ -41,7 +41,7 @@
 ## 📦 已部署插件列表
 
 ### Bash Permission Hook
-**位置**：`~/.claude/plugins/cache/claude-code-permissions-hook/bash-permission-hook/1.1.0/`
+**位置**：`~/.claude/plugins/cache/claude-code-permissions-hook/bash-permission-hook/1.2.0/`
 
 **处理命令**：
 - 拦截：`find`、`grep`（单独使用）、`cat`、`head`、`tail`、`sed`、`awk`、`curl`、`wget`
@@ -53,7 +53,7 @@
 - 规则驱动的权限控制
 
 ### Web Permission Hook
-**位置**：`~/.claude/plugins/cache/claude-code-permissions-hook/web-permission-hook/1.1.0/`
+**位置**：`~/.claude/plugins/cache/claude-code-permissions-hook/web-permission-hook/1.2.0/`
 
 **处理工具**：`WebFetch`、`WebSearch`
 
@@ -62,7 +62,7 @@
 - 网络请求安全引导
 
 ### Win Path Check Hook
-**位置**：`~/.claude/plugins/cache/claude-code-permissions-hook/win-path-check-hook/1.0.0/`
+**位置**：`~/.claude/plugins/cache/claude-code-permissions-hook/win-path-check-hook/1.2.0/`
 
 **功能**：
 - 跨平台路径兼容性检查
