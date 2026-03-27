@@ -1,63 +1,124 @@
 {
-  "rules": [
-    {
-      "pattern": "find",
-      "decision": "deny",
-      "suggestion": "使用内置的Glob工具代替"
-    },
-    {
-      "pattern": "grep",
-      "decision": "deny",
-      "suggestion": "使用内置的Grep工具代替",
-      "allowInPipeReceiver": true
-    },
-    {
-      "pattern": "cat",
-      "decision": "deny",
-      "suggestion": "使用内置的Read工具代替",
-      "allowInPipeReceiver": true
-    },
-    {
-      "pattern": "head",
-      "decision": "deny",
-      "suggestion": "使用内置的Read工具代替",
-      "allowInPipeReceiver": true
-    },
-    {
-      "pattern": "echo",
-      "decision": "deny",
-      "suggestion": "使用内置的Write工具代替",
-      "allowInPipeReceiver": true
-    },
-    {
-      "pattern": "tail",
-      "decision": "deny",
-      "suggestion": "使用内置的Read工具代替"
-    },
-    {
-      "pattern": "sed",
-      "decision": "deny",
-      "suggestion": "使用内置的Edit工具代替"
-    },
-    {
-      "pattern": "awk",
-      "decision": "deny",
-      "suggestion": "使用内置的Grep和Read工具组合代替"
-    },
-    {
-      "pattern": "curl",
-      "decision": "deny",
-      "suggestion": "使用内置的WebFetch工具代替"
-    },
-    {
-      "pattern": "wget",
-      "decision": "deny",
-      "suggestion": "使用内置的WebSearch工具代替"
-    },
-    {
-      "pattern": "rm",
-      "decision": "ask",
-      "suggestion": "询问用户是否可以删除"
-    }
-  ]
+	"rules": [
+		{
+			"pattern": "find",
+			"decision": "deny",
+			"suggestion": "使用内置的Glob工具代替"
+		},
+		{
+			"pattern": "grep",
+			"decision": "deny",
+			"suggestion": "使用内置的Grep工具代替",
+			"allowInPipeReceiver": true
+		},
+		{
+			"pattern": "cat",
+			"decision": "deny",
+			"suggestion": "使用内置的Read工具代替",
+			"allowInPipeReceiver": true
+		},
+		{
+			"pattern": "head",
+			"decision": "deny",
+			"suggestion": "使用内置的Read工具代替",
+			"allowInPipeReceiver": true
+		},
+		{
+			"pattern": "tail",
+			"decision": "deny",
+			"suggestion": "使用内置的Read工具代替",
+			"allowInPipeReceiver": true
+		},
+		{
+			"pattern": "more",
+			"decision": "deny",
+			"suggestion": "使用内置的Read工具代替"
+		},
+		{
+			"pattern": "less",
+			"decision": "deny",
+			"suggestion": "使用内置的Read工具代替"
+		},
+		{
+			"pattern": "awk",
+			"decision": "deny",
+			"suggestion": "使用内置的Grep和Read工具组合代替",
+			"allowInPipeReceiver": true
+		},
+		{
+			"pattern": "echo",
+			"decision": "deny",
+			"suggestion": "禁止使用echo命令"
+		},
+		{
+			"pattern": "sed",
+			"decision": "deny",
+			"suggestion": "使用内置的Edit工具代替"
+		},
+		{
+			"pattern": "wget",
+			"decision": "deny",
+			"suggestion": "使用内置的WebSearch工具代替"
+		},
+		{
+			"pattern": "taskkill",
+			"decision": "ask",
+			"suggestion": "禁止擅自执行执行Kill进程命令，必须征得用户同意"
+		},
+		{
+			"pattern": "rm",
+			"decision": "ask",
+			"suggestion": "禁止擅自使用删除命令，必须征得用户同意"
+		},
+		{
+			"pattern": "rmdir",
+			"decision": "ask",
+			"suggestion": "禁止擅自使用删除命令，必须征得用户同意"
+		},
+		{
+			"pattern": "2>nul",
+			"decision": "deny",
+			"suggestion": "禁止错误命令'2>nul'"
+		},
+		{
+			"pattern": "git commit",
+			"decision": "ask",
+			"suggestion": "禁止擅自使用git commit进行代码提交，必须征得用户同意"
+		},
+		{
+			"pattern": "git checkout",
+			"decision": "ask",
+			"suggestion": "禁止擅自使用git checkout进行代码回滚，必须征得用户同意"
+		},
+		{
+			"pattern": "git restore",
+			"decision": "ask",
+			"suggestion": "禁止擅自使用git restore进行代码回滚，必须征得用户同意"
+		},
+		{
+			"pattern": "git reset",
+			"decision": "ask",
+			"suggestion": "禁止擅自使用git reset命令，这可能导致数据丢失，必须征得用户同意"
+		},
+		{
+			"pattern": "git push",
+			"decision": "deny",
+			"suggestion": "禁止擅自使用git push推送命令，必须征得用户同意"
+		},
+		{
+			"pattern": "git clean",
+			"decision": "ask",
+			"suggestion": "禁止擅自使用git clean命令，这可能导致未跟踪文件永久删除，必须征得用户同意"
+		},
+		{
+			"pattern": "git rebase",
+			"decision": "ask",
+			"suggestion": "禁止擅自使用git rebase命令，这可能导致提交历史混乱，必须征得用户同意"
+		},
+		{
+			"pattern": "git branch -D",
+			"decision": "ask",
+			"suggestion": "禁止擅自使用git branch -D强制删除分支命令，必须征得用户同意"
+		}
+	]
 }

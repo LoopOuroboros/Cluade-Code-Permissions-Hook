@@ -57,6 +57,43 @@ function extractCommandName(cmd) {
 }
 
 /**
+ * 从包装命令中提取内部命令
+ * 支持 wsl -c, docker exec -c, ssh -c 等模式
+ * @param {string} cmd - 原始命令字符串
+ * @returns {string|null} 提取的内部命令，如果无法提取则返回null
+ */
+function extractWrappedCommand(cmd) {
+    const trimmed = cmd.trim();
+
+    // 匹配常见的包装命令模式
+    // wsl -d Ubuntu -u root -e bash -c "command"
+    // docker exec container bash -c "command"
+    // ssh user@host "command"
+    const patterns = [
+        // wsl 模式: wsl [options] -c "command" 或 wsl [options] -e bash -c "command"
+        /^wsl\s+(?:.*?\s+)?(?:-e\s+\w+\s+)?-c\s+["'](.*)["']$/i,
+        /^wsl\s+(?:.*?\s+)?(?:-e\s+\w+\s+)?-c\s+(.*)$/i,
+
+        // docker 模式: docker exec [options] container command 或 docker exec [options] container bash -c "command"
+        /^docker\s+exec\s+(?:.*?\s+)?\S+\s+(?:\w+\s+)?-c\s+["'](.*)["']$/i,
+        /^docker\s+exec\s+(?:.*?\s+)?\S+\s+(?:\w+\s+)?-c\s+(.*)$/i,
+
+        // ssh 模式: ssh [options] user@host "command"
+        /^ssh\s+(?:.*?\s+)?\S+\s+["'](.*)["']$/i,
+        /^ssh\s+(?:.*?\s+)?\S+\s+(.*)$/i
+    ];
+
+    for (const pattern of patterns) {
+        const match = trimmed.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+
+    return null;
+}
+
+/**
  * 检查单个命令是否被拦截或需要询问
  * @param {string} cmd - 命令字符串
  * @param {Array} rules - 拦截规则数组
