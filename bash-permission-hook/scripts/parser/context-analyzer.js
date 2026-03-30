@@ -1,8 +1,41 @@
 /**
  * 上下文分析器 - 分析命令的执行上下文
+ * 支持包装命令（wsl/docker/ssh/bash -c）的递归分析
  */
 
 const { parse } = require('./command-parser');
+
+/**
+ * 包装命令配置 - 定义如何从不同包装器中提取内部命令
+ */
+const WRAPPER_COMMANDS = {
+    wsl: {
+        triggers: ['wsl'],
+        commandFlags: ['-c', '--command'],
+        execFlags: ['-e', '--exec'],
+        extractFromLastArg: true
+    },
+    docker: {
+        triggers: ['docker'],
+        subcommands: ['exec', 'run'],
+        commandFlags: ['-c', '--command'],
+        extractFromLastArg: true
+    },
+    ssh: {
+        triggers: ['ssh'],
+        extractFromLastArg: true
+    },
+    bash: {
+        triggers: ['bash'],
+        commandFlags: ['-c', '--command'],
+        extractAfterFlag: true
+    },
+    sh: {
+        triggers: ['sh'],
+        commandFlags: ['-c', '--command'],
+        extractAfterFlag: true
+    }
+};
 
 function analyzeContext(command) {
     const ast = parse(command);
@@ -23,7 +56,24 @@ function traverseAst(node, contexts, state) {
 
     switch (node.type) {
         case 'command':
-            contexts.push(createCommandContext(node, state));
+            const cmdContext = createCommandContext(node, state);
+            contexts.push(cmdContext);
+
+            // 检查是否是包装命令，提取内部命令并递归分析
+            const innerCommand = extractInnerCommand(cmdContext);
+            if (innerCommand) {
+                try {
+                    const innerAst = parse(innerCommand);
+                    traverseAst(innerAst, contexts, {
+                        inPipeline: false,
+                        inConditional: false,
+                        pipelineIndex: 0,
+                        pipelineLength: 0
+                    });
+                } catch (e) {
+                    // 内部命令解析失败时静默跳过
+                }
+            }
             break;
 
         case 'pipeline':
@@ -58,6 +108,59 @@ function traverseAst(node, contexts, state) {
             });
             break;
     }
+}
+
+/**
+ * 从包装命令中提取内部命令
+ * @param {Object} context - 命令上下文
+ * @returns {string|null} 提取的内部命令或 null
+ */
+function extractInnerCommand(context) {
+    const commandName = context.command;
+    const args = context.args || [];
+
+    // 检查是否是已知的包装命令
+    for (const [wrapperType, config] of Object.entries(WRAPPER_COMMANDS)) {
+        if (config.triggers.includes(commandName)) {
+            return extractByConfig(context, config);
+        }
+    }
+
+    return null;
+}
+
+/**
+ * 根据配置提取内部命令
+ * @param {Object} context - 命令上下文
+ * @param {Object} config - 包装命令配置
+ * @returns {string|null}
+ */
+function extractByConfig(context, config) {
+    const args = context.args || [];
+
+    // 模式 1: 在 -c/--command 标志后提取
+    if (config.commandFlags) {
+        for (const flag of config.commandFlags) {
+            const flagIndex = args.indexOf(flag);
+            if (flagIndex !== -1 && flagIndex + 1 < args.length) {
+                return args[flagIndex + 1];
+            }
+        }
+    }
+
+    // 模式 2: 从最后一个参数提取（ssh、wsl 等）
+    if (config.extractFromLastArg && args.length > 0) {
+        // 检查最后一个参数是否看起来像命令（包含空格或特殊字符）
+        const lastArg = args[args.length - 1];
+        if (lastArg && (lastArg.includes(' ') ||
+                          lastArg.includes('|') ||
+                          lastArg.includes('>') ||
+                          lastArg.includes(';'))) {
+            return lastArg;
+        }
+    }
+
+    return null;
 }
 
 function createCommandContext(node, state) {
