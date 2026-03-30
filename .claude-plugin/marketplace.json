@@ -20,7 +20,7 @@
       "name": "win-path-check-hook",
       "source": "./win-path-check-hook",
       "description": "Windows路径自动修正插件，在Claude Code中自动将反斜杠路径转换为正斜杠，确保跨平台兼容性。",
-      "version": "1.2.0"
+      "version": "2.0.0"
     }
   ]
 }

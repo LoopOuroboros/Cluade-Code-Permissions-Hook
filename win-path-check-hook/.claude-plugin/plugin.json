@@ -1,5 +1,6 @@
 {
   "name": "win-path-check-hook",
-  "version": "1.2.0",
-  "description": "Windows路径反斜杠检测插件 - 检测Bash命令中未转义的反斜杠字符，提供路径修正建议"
+  "version": "2.0.0",
+  "description": "Windows路径转义问题检查与智能修正插件",
+  "type": "hook"
 }

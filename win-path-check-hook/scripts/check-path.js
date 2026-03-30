@@ -1,18 +1,201 @@
-/**
- * Windows路径反斜杠自动修正插件
- * 功能：检测Bash命令中未转义的'\'字符，自动修正为正斜杠格式并放行
- * 利用PreToolUse Hook的updatedInput机制实现无感知的路径自动修正
- */
+#!/usr/bin/env node
 
 /**
- * 检测命令中是否包含Windows风格的未转义反斜杠
+ * Windows路径转义问题检测与智能修正插件 (重构版)
+ *
+ * 功能：
+ * - 检测Bash命令中的Windows路径格式问题
+ * - 对带引号的Windows路径自动修正为正斜杠
+ * - 对无引号的Windows路径提供友好提示（建议使用引号）
+ * - 提供清晰的错误提示和替代方案
+ *
+ * @author Claude Code Permissions Hook Project
+ * @version 2.0.1
  */
-function checkWindowsPath(input) {
-    // 提取命令字符串
-    const command = input.tool_input?.command || input.command || '';
 
-    // 如果命令为空或不含反斜杠，直接放行（不显示任何提示）
-    if (!command || !command.includes('\\')) {
+// 读取标准输入
+const input = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+
+/**
+ * 检测Windows路径问题的主要函数
+ * @param {string} command - 完整的Bash命令
+ * @returns {Object} 检测结果和修正建议
+ */
+function detectAndFixWindowsPathIssues(command) {
+    // 如果命令为空，直接放行
+    if (!command || command.trim() === '') {
+        return { shouldAllow: true, fixedCommand: command };
+    }
+
+    let fixedCommand = command;
+    let hasQuotedPaths = false;
+    let hasUnquotedWindowsPaths = false;
+
+    // 分析命令中的参数（简单空格分割，不处理复杂引用）
+    const args = command.split(/\s+/).filter(arg => arg.length > 0);
+
+    // 跳过第一个参数（命令名）
+    for (let i = 1; i < args.length; i++) {
+        const arg = args[i];
+
+        // 检查是否是带引号的Windows路径
+        if ((arg.startsWith('"') && arg.endsWith('"')) ||
+            (arg.startsWith("'") && arg.endsWith("'"))) {
+            const unquoted = arg.slice(1, -1);
+            if (isWindowsPath(unquoted)) {
+                hasQuotedPaths = true;
+                // 自动修正带引号的Windows路径
+                const fixedUnquoted = fixWindowsPath(unquoted);
+                if (fixedUnquoted !== unquoted) {
+                    fixedCommand = fixedCommand.replace(arg, `"${fixedUnquoted}"`);
+                }
+            }
+        }
+        // 检查是否是无引号的Windows路径模式
+        else if (isWindowsPathPattern(arg)) {
+            hasUnquotedWindowsPaths = true;
+        }
+    }
+
+    // 如果有无引号的Windows路径，建议用户使用引号
+    if (hasUnquotedWindowsPaths) {
+        return {
+            shouldAllow: false,
+            reason: `⚠️ 命令中包含无引号的Windows路径（如 C:\\file.txt 或 Projects\\repo）。在Bash中，反斜杠会被解释为转义字符，导致路径损坏。请使用引号包裹路径，例如："C:\\\\file.txt"，这样插件可以自动修正为跨平台兼容的正斜杠路径。`
+        };
+    }
+
+    // 如果有带引号的Windows路径且已修正
+    if (hasQuotedPaths && fixedCommand !== command) {
+        return {
+            shouldAllow: true,
+            fixedCommand: fixedCommand,
+            originalCommand: command
+        };
+    }
+
+    // 没有问题，直接放行
+    return { shouldAllow: true, fixedCommand: command };
+}
+
+/**
+ * 检查字符串是否包含Windows路径特征
+ * @param {string} str - 要检查的字符串
+ * @returns {boolean} 是否为Windows路径
+ */
+function isWindowsPath(str) {
+    // 检查驱动器路径 C:\ 或 UNC路径 \\server\
+    if (/^[A-Za-z]:[\\\/]|^\\\\/.test(str)) {
+        return true;
+    }
+    // 包含任意反斜杠的路径（包括相对路径 Projects\repo）
+    if (str.includes('\\')) {
+        return true;
+    }
+    // 检查混合路径模式
+    return /[A-Za-z]:[\\\/][^"\s]*|[\\\/][^"\s]*[\\\/]/.test(str);
+}
+
+/**
+ * 检查字符串是否匹配无引号Windows路径模式
+ * @param {string} str - 要检查的字符串
+ * @returns {boolean} 是否匹配无引号Windows路径模式
+ */
+function isWindowsPathPattern(str) {
+    // 检测可能的Windows路径模式（包含反斜杠但无引号）
+    // 驱动器字母 + 冒号 + 反斜杠模式 (C:\file.txt)
+    if (/^[A-Za-z]:\\/.test(str)) {
+        return true;
+    }
+    // UNC路径模式 (\\server\share)
+    if (str.startsWith('\\\\')) {
+        return true;
+    }
+    // 包含任意反斜杠的路径模式 (Projects\repo, src\components)
+    // 只要有反斜杠，就判定为可能的Windows路径，提示用户使用引号
+    if (str.includes('\\')) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 修正Windows路径中的反斜杠为正斜杠
+ * @param {string} path - Windows路径
+ * @returns {string} 修正后的路径
+ */
+function fixWindowsPath(path) {
+    let fixed = path;
+    // 处理驱动器路径 C:\Users\... -> C:/Users/...
+    fixed = fixed.replace(/^([A-Za-z]):\\/, '$1:/');
+    // 处理UNC路径 \\server\share -> //server/share
+    fixed = fixed.replace(/^\\\\([^\\])/g, '//$1');
+    // 处理其他反斜杠 -> 正斜杠
+    fixed = fixed.replace(/\\/g, '/');
+    return fixed;
+}
+
+/**
+ * 主钩子处理函数
+ * @param {Object} input - Claude Code传入的钩子输入
+ * @returns {Object} 钩子输出响应
+ */
+function handleHook(input) {
+    try {
+        // 获取命令内容
+        const command = input?.tool_input?.command;
+
+        if (!command) {
+            // 如果没有命令，放行
+            return {
+                continue: true,
+                hookSpecificOutput: {
+                    hookEventName: "PreToolUse",
+                    permissionDecision: "allow"
+                }
+            };
+        }
+
+        // 检测和修正路径问题
+        const result = detectAndFixWindowsPathIssues(command);
+
+        if (result.shouldAllow) {
+            if (result.fixedCommand && result.fixedCommand !== command) {
+                // 返回修正后的命令
+                return {
+                    continue: true,
+                    hookSpecificOutput: {
+                        hookEventName: "PreToolUse",
+                        permissionDecision: "allow",
+                        updatedInput: {
+                            command: result.fixedCommand
+                        }
+                    }
+                };
+            } else {
+                // 无需修正，直接放行
+                return {
+                    continue: true,
+                    hookSpecificOutput: {
+                        hookEventName: "PreToolUse",
+                        permissionDecision: "allow"
+                    }
+                };
+            }
+        } else {
+            // 拦截并提供友好提示
+            return {
+                continue: true,
+                hookSpecificOutput: {
+                    hookEventName: "PreToolUse",
+                    permissionDecision: "deny",
+                    permissionDecisionReason: result.reason
+                }
+            };
+        }
+    } catch (error) {
+        // 错误情况下默认放行，避免阻塞正常操作
+        console.error('Path check hook error:', error.message);
         return {
             continue: true,
             hookSpecificOutput: {
@@ -21,128 +204,8 @@ function checkWindowsPath(input) {
             }
         };
     }
-
-    // 检测未转义的反斜杠模式
-    const hasUnescapedBackslash = /\\[^\s\\]/g.test(command);
-
-    if (hasUnescapedBackslash) {
-        // 自动修正路径并放行
-        const fixedCommand = fixWindowsPaths(command);
-
-        return {
-            continue: true,
-            hookSpecificOutput: {
-                hookEventName: "PreToolUse",
-                permissionDecision: "allow",
-                updatedInput: {
-                    command: fixedCommand
-                }
-            }
-        };
-    }
-
-    // 没有未转义反斜杠，直接放行（不显示任何提示）
-    return {
-        continue: true,
-        hookSpecificOutput: {
-            hookEventName: "PreToolUse",
-            permissionDecision: "allow"
-        }
-    };
 }
 
-/**
- * 从命令中提取Windows风格路径
- */
-function extractWindowsPaths(command) {
-    const paths = [];
-
-    // 匹配Windows风格路径的模式
-    // 1. 绝对路径: C:\, D:\ 等
-    const absolutePaths = command.match(/[A-Za-z]:\\[^\\]*(?:\\[^\\]*)*/g);
-    if (absolutePaths) {
-        paths.push(...absolutePaths);
-    }
-
-    // 2. 相对路径中的反斜杠
-    const relativePaths = command.match(/(?:^|\s)[^\s\\?:*"]+\\+(?:[^\\?:*"\s]+\\*)+/g);
-    if (relativePaths) {
-        relativePaths.forEach(path => {
-            paths.push(path.trim());
-        });
-    }
-
-    // 去重
-    return [...new Set(paths)];
-}
-
-/**
- * 自动修正Windows路径为正斜杠格式
- */
-function fixWindowsPaths(command) {
-    const paths = extractWindowsPaths(command);
-
-    if (paths.length === 0) {
-        return command;
-    }
-
-    // 修正所有找到的路径
-    let fixedCommand = command;
-    const pathReplacements = new Map();
-
-    paths.forEach(path => {
-        const fixed = path.replace(/\\/g, '/');
-        pathReplacements.set(path, fixed);
-    });
-
-    // 执行替换（倒序替换避免位置变化）
-    Array.from(pathReplacements.keys())
-        .sort((a, b) => b.length - a.length)
-        .forEach(original => {
-            const fixed = pathReplacements.get(original);
-            fixedCommand = fixedCommand.split(original).join(fixed);
-        });
-
-    return fixedCommand;
-}
-
-// CLI入口点 - 支持标准输入和命令行参数
-if (require.main === module) {
-    let input = {};
-    let stdin = '';
-
-    // 尝试从标准输入读取JSON
-    if (!process.stdin.isTTY) {
-        process.stdin.setEncoding('utf8');
-        process.stdin.on('data', chunk => {
-            stdin += chunk;
-        });
-        process.stdin.on('end', () => {
-            if (stdin.trim()) {
-                try {
-                    input = JSON.parse(stdin);
-                } catch (e) {
-                    // 解析失败则使用空对象
-                }
-            }
-
-            // 执行检测并输出结果
-            const result = checkWindowsPath(input);
-            process.stdout.write(JSON.stringify(result));
-        });
-    } else {
-        // 直接从命令行参数读取
-        if (process.argv.length > 2) {
-            try {
-                input = JSON.parse(process.argv[2]);
-            } catch (e) {
-                // 忽略解析错误
-            }
-        }
-        const result = checkWindowsPath(input);
-        process.stdout.write(JSON.stringify(result));
-    }
-}
-
-// 导出函数供测试使用
-module.exports = { checkWindowsPath };
+// 执行主函数并输出结果
+const output = handleHook(input);
+console.log(JSON.stringify(output));
