@@ -12,24 +12,6 @@
 			"allowInPipeReceiver": true
 		},
 		{
-			"pattern": "cat",
-			"decision": "deny",
-			"suggestion": "使用内置的Read工具代替",
-			"allowInPipeReceiver": true
-		},
-		{
-			"pattern": "head",
-			"decision": "deny",
-			"suggestion": "使用内置的Read工具代替",
-			"allowInPipeReceiver": true
-		},
-		{
-			"pattern": "tail",
-			"decision": "deny",
-			"suggestion": "使用内置的Read工具代替",
-			"allowInPipeReceiver": true
-		},
-		{
 			"pattern": "more",
 			"decision": "deny",
 			"suggestion": "使用内置的Read工具代替"
@@ -44,11 +26,6 @@
 			"decision": "deny",
 			"suggestion": "使用内置的Grep和Read工具组合代替",
 			"allowInPipeReceiver": true
-		},
-		{
-			"pattern": "echo",
-			"decision": "deny",
-			"suggestion": "禁止使用echo命令"
 		},
 		{
 			"pattern": "sed",
@@ -74,11 +51,6 @@
 			"pattern": "rmdir",
 			"decision": "ask",
 			"suggestion": "禁止擅自使用删除命令，必须征得用户同意"
-		},
-		{
-			"pattern": "2>nul",
-			"decision": "deny",
-			"suggestion": "禁止错误命令'2>nul'"
 		},
 		{
 			"pattern": "git commit",
