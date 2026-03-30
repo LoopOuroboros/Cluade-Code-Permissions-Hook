@@ -112,6 +112,12 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 - **错误容错**: 配置加载失败时默认放行
 - **性能优化**: 命令拆分结果缓存
 
+### 🎯 Git 命令智能分类
+- **只读命令自动放行**: `status`, `log`, `diff`, `show`, `branch` (安全参数), `tag` (安全参数) 等
+- **操作类命令用户确认**: `commit`, `push`, `pull`, `merge`, `rebase`, `checkout`, `reset`, `clean` 等
+- **智能参数分析**: 区分 `git branch` (只读) 和 `git branch -D` (操作类)
+- **向后兼容**: 保留现有 config.json 中的 Git 规则作为后备
+
 ## 部署注意
 
 ### 同步要求
@@ -159,6 +165,14 @@ console.log('管道位置检测:', isPipeReceiver);
 - **最后更新**: 2025-12-23
 
 ## 📋 变更记录 (Changelog)
+
+### 2026-03-30
+- 🎯 新增 Git 命令智能分类拦截机制
+- 🔧 实现 Git 只读命令自动放行（status, log, diff, show 等）
+- 🔧 实现 Git 操作类命令用户确认（commit, push, pull, merge 等）
+- 🔧 智能参数分析，区分 branch/tag/config/remote/stash 的安全与危险操作
+- 🏗️ 在 decision-maker.js 中添加 handleGitCommand 和 isGitReadonlyCommand 函数
+- 📦 向后兼容，保留现有 config.json 中的 Git 规则作为后备
 
 ### 2026-03-30
 - 🎯 新增包装命令递归检测（wsl/docker/ssh/bash -c/sh -c）
