@@ -31,8 +31,8 @@ function detectAndFixWindowsPathIssues(command) {
     let hasQuotedPaths = false;
     let hasUnquotedWindowsPaths = false;
 
-    // 分析命令中的参数（简单空格分割，不处理复杂引用）
-    const args = command.split(/\s+/).filter(arg => arg.length > 0);
+    // 分析命令中的参数（正确处理带引号的参数）
+    const args = parseCommandLine(command);
 
     // 跳过第一个参数（命令名）
     for (let i = 1; i < args.length; i++) {
@@ -84,12 +84,17 @@ function detectAndFixWindowsPathIssues(command) {
  * @returns {boolean} 是否为Windows路径
  */
 function isWindowsPath(str) {
+    // Linux绝对路径豁免：以/开头的路径（包括WSL的/mnt/路径）直接返回false
+    if (str.startsWith('/')) {
+        return false;
+    }
+
     // 检查驱动器路径 C:\ 或 UNC路径 \\server\
     if (/^[A-Za-z]:[\\\/]|^\\\\/.test(str)) {
         return true;
     }
-    // 包含任意反斜杠的路径（包括相对路径 Projects\repo）
-    if (str.includes('\\')) {
+    // 检查是否包含路径相关的反斜杠（排除转义序列）
+    if (/\\[a-zA-Z0-9._/-]/.test(str)) {
         return true;
     }
     // 检查混合路径模式
@@ -102,6 +107,11 @@ function isWindowsPath(str) {
  * @returns {boolean} 是否匹配无引号Windows路径模式
  */
 function isWindowsPathPattern(str) {
+    // Linux绝对路径豁免：以/开头的路径（包括WSL的/mnt/路径）直接返回false
+    if (str.startsWith('/')) {
+        return false;
+    }
+
     // 检测可能的Windows路径模式（包含反斜杠但无引号）
     // 驱动器字母 + 冒号 + 反斜杠模式 (C:\file.txt)
     if (/^[A-Za-z]:\\/.test(str)) {
@@ -111,11 +121,13 @@ function isWindowsPathPattern(str) {
     if (str.startsWith('\\\\')) {
         return true;
     }
-    // 包含任意反斜杠的路径模式 (Projects\repo, src\components)
-    // 只要有反斜杠，就判定为可能的Windows路径，提示用户使用引号
-    if (str.includes('\\')) {
+
+    // 检查是否包含路径相关的反斜杠（排除转义序列）
+    // 只有在反斜杠后面跟的是路径字符（字母、数字、下划线、点、斜杠等）时才认为是路径
+    if (/\\[a-zA-Z0-9._/-]/.test(str)) {
         return true;
     }
+
     return false;
 }
 
@@ -133,6 +145,47 @@ function fixWindowsPath(path) {
     // 处理其他反斜杠 -> 正斜杠
     fixed = fixed.replace(/\\/g, '/');
     return fixed;
+}
+
+/**
+ * 解析命令行参数，正确处理带引号的参数
+ * @param {string} command - 完整的命令字符串
+ * @returns {Array<string>} 解析后的参数数组
+ */
+function parseCommandLine(command) {
+    const args = [];
+    let current = '';
+    let inQuotes = false;
+    let quoteChar = '';
+    let i = 0;
+
+    while (i < command.length) {
+        const char = command[i];
+
+        if (char === ' ' && !inQuotes) {
+            if (current !== '') {
+                args.push(current);
+                current = '';
+            }
+        } else if ((char === '"' || char === "'") && !inQuotes) {
+            inQuotes = true;
+            quoteChar = char;
+            current += char;
+        } else if (char === quoteChar && inQuotes) {
+            inQuotes = false;
+            quoteChar = '';
+            current += char;
+        } else {
+            current += char;
+        }
+        i++;
+    }
+
+    if (current !== '') {
+        args.push(current);
+    }
+
+    return args.filter(arg => arg.length > 0);
 }
 
 /**
