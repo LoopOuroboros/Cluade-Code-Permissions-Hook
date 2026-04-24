@@ -15,6 +15,19 @@ const { makeDecision } = require('./rules/decision-maker');
 function handleHook(input) {
     try {
         const fullCommand = input.tool_input.command;
+
+        // WSL命令跳过检测：wsl后面的内容是Linux命令，由WSL环境处理
+        const commandLower = (fullCommand || '').trim().toLowerCase();
+        if (commandLower.startsWith('wsl ')) {
+            return {
+                continue: true,
+                hookSpecificOutput: {
+                    hookEventName: "PreToolUse",
+                    permissionDecision: "allow"
+                }
+            };
+        }
+
         const decision = makeDecision(fullCommand);
 
         if (decision.decision === 'allow') {

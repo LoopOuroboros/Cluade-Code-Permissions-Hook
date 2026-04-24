@@ -81,12 +81,14 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
   "pattern": "grep",
   "action": "reject",
   "suggestion": "使用内置的Grep工具代替",
-  "allowInPipeReceiver": true
+  "allowInPipeReceiver": true,
+  "allowInWsl": true
 }
 ```
 
 **新增字段说明**：
 - **`allowInPipeReceiver`**: Boolean类型，可选字段。设置为 `true` 时，命令在管道接收端位置将被放行，便于与其他命令配合进行数据处理。
+- **`allowInWsl`**: Boolean类型，可选字段。设置为 `true` 时，命令在WSL环境下将被放行，因为WSL内部执行的是Linux命令，无需拦截。
 
 ### 支持的命令类型
 - **单命令**: `grep`, `find`, `cat`
@@ -165,6 +167,12 @@ console.log('管道位置检测:', isPipeReceiver);
 - **最后更新**: 2025-12-23
 
 ## 📋 变更记录 (Changelog)
+
+### 2026-04-24
+- 🎯 新增 `allowInWsl` 配置字段，支持在WSL环境下放行指定命令
+- 🔧 context-analyzer.js 新增 `fromWsl` 上下文标记，识别WSL包装命令链
+- 🔧 decision-maker.js 新增WSL上下文感知，规则匹配时判断 `allowInWsl`
+- ⚙️ config.json 追加 find/grep/awk 的 `allowInWsl: true`，允许WSL内执行
 
 ### 2026-03-30
 - 🎯 新增 Git 命令智能分类拦截机制

@@ -58,6 +58,9 @@ function ruleMatches(commandName, args, context, rule) {
     if (rule.allowInConditional && context.isInConditional) {
         return false;
     }
+    if (rule.allowInWsl && context.fromWsl) {
+        return false;
+    }
 
     if (rule.conditions) {
         if (!checkAdvancedConditions(commandName, args, context, rule.conditions)) {

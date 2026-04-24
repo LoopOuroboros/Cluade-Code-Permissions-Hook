@@ -64,11 +64,14 @@ function traverseAst(node, contexts, state) {
             if (innerCommand) {
                 try {
                     const innerAst = parse(innerCommand);
+                    // 判断是否是WSL包装命令，将上下文传递下去
+                    const isWslWrapper = cmdContext.command === 'wsl';
                     traverseAst(innerAst, contexts, {
                         inPipeline: false,
                         inConditional: false,
                         pipelineIndex: 0,
-                        pipelineLength: 0
+                        pipelineLength: 0,
+                        fromWsl: isWslWrapper || state.fromWsl || false
                     });
                 } catch (e) {
                     // 内部命令解析失败时静默跳过
@@ -184,7 +187,8 @@ function createCommandContext(node, state) {
         redirectTargets,
         command: node.command,
         args: node.args,
-        redirects: node.redirects
+        redirects: node.redirects,
+        fromWsl: state.fromWsl || false
     };
 }
 

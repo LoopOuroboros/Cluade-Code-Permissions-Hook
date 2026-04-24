@@ -46,6 +46,11 @@ function evaluateCommand(context, rules) {
 
     const rule = matchRule(commandName, args, context, rules);
     if (rule) {
+        // WSL环境下且规则允许时，跳过拦截
+        if (context.fromWsl && rule.allowInWsl === true) {
+            return { decision: 'allow' };
+        }
+
         const displayName = rule.pattern.split(' ')[0];
         if (rule.decision === 'ask') {
             return {

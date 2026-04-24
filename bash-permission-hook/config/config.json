@@ -3,13 +3,15 @@
 		{
 			"pattern": "find",
 			"decision": "deny",
-			"suggestion": "使用内置的Glob工具代替"
+			"suggestion": "使用内置的Glob工具代替",
+			"allowInWsl": true
 		},
 		{
 			"pattern": "grep",
 			"decision": "deny",
 			"suggestion": "使用内置的Grep工具代替",
-			"allowInPipeReceiver": true
+			"allowInPipeReceiver": true,
+			"allowInWsl": true
 		},
 		{
 			"pattern": "more",
@@ -25,7 +27,8 @@
 			"pattern": "awk",
 			"decision": "deny",
 			"suggestion": "使用内置的Grep和Read工具组合代替",
-			"allowInPipeReceiver": true
+			"allowInPipeReceiver": true,
+			"allowInWsl": true
 		},
 		{
 			"pattern": "sed",
