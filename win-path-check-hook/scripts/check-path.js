@@ -79,6 +79,17 @@ function detectAndFixWindowsPathIssues(command) {
 }
 
 /**
+ * 检查字符串是否为常见的转义序列（用于排除JSON等场景）
+ * @param {string} str - 要检查的字符串
+ * @returns {boolean} 是否为转义序列
+ */
+function isEscapeSequence(str) {
+    // 常见转义序列模式：\n, \t, \r, \b, \f, \0, \", \', \\
+    // 以及 \uXXXX (Unicode转义)
+    return /^\$[a-zA-Z]|\\[ntrbf0\\'"]|\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}$/.test(str);
+}
+
+/**
  * 检查字符串是否包含Windows路径特征
  * @param {string} str - 要检查的字符串
  * @returns {boolean} 是否为Windows路径
@@ -89,16 +100,27 @@ function isWindowsPath(str) {
         return false;
     }
 
+    // 排除JSON结构体：以 { 或 [ 开头的内容很可能是JSON
+    // 此时如果包含反斜杠，很可能是转义序列而不是路径
+    if ((str.startsWith('{') || str.startsWith('[')) && /\\/.test(str)) {
+        return false;
+    }
+
+    // 排除明显是转义序列的内容
+    if (isEscapeSequence(str)) {
+        return false;
+    }
+
     // 检查驱动器路径 C:\ 或 UNC路径 \\server\
     if (/^[A-Za-z]:[\\\/]|^\\\\/.test(str)) {
         return true;
     }
-    // 检查是否包含路径相关的反斜杠（排除转义序列）
-    if (/\\[a-zA-Z0-9._/-]/.test(str)) {
+    // 检查混合路径模式
+    if (/[A-Za-z]:[\\\/][^"\s]*|[\\\/][^"\s]*[\\\/]/.test(str)) {
         return true;
     }
-    // 检查混合路径模式
-    return /[A-Za-z]:[\\\/][^"\s]*|[\\\/][^"\s]*[\\\/]/.test(str);
+
+    return false;
 }
 
 /**
@@ -112,6 +134,11 @@ function isWindowsPathPattern(str) {
         return false;
     }
 
+    // 排除JSON结构体
+    if ((str.startsWith('{') || str.startsWith('[')) && /\\/.test(str)) {
+        return false;
+    }
+
     // 检测可能的Windows路径模式（包含反斜杠但无引号）
     // 驱动器字母 + 冒号 + 反斜杠模式 (C:\file.txt)
     if (/^[A-Za-z]:\\/.test(str)) {
@@ -122,10 +149,11 @@ function isWindowsPathPattern(str) {
         return true;
     }
 
-    // 检查是否包含路径相关的反斜杠（排除转义序列）
-    // 只有在反斜杠后面跟的是路径字符（字母、数字、下划线、点、斜杠等）时才认为是路径
-    if (/\\[a-zA-Z0-9._/-]/.test(str)) {
-        return true;
+    // 排除转义序列相关的反斜杠模式
+    // 反斜杠后面紧跟引号、另一个反斜杠或特定转义字符的，可能是转义序列而不是路径
+    // 如 \"、\'、\\、\n、\t 等
+    if (/\\[\\"'ntrbf0]/.test(str)) {
+        return false;
     }
 
     return false;
@@ -200,6 +228,18 @@ function handleHook(input) {
 
         if (!command) {
             // 如果没有命令，放行
+            return {
+                continue: true,
+                hookSpecificOutput: {
+                    hookEventName: "PreToolUse",
+                    permissionDecision: "allow"
+                }
+            };
+        }
+
+        // WSL命令跳过检测：wsl后面的内容是Linux命令，由WSL环境处理，不属于Windows路径范畴
+        const commandLower = command.trim().toLowerCase();
+        if (commandLower.startsWith('wsl ')) {
             return {
                 continue: true,
                 hookSpecificOutput: {

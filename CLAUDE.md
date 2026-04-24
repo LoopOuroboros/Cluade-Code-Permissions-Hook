@@ -213,6 +213,10 @@ graph TD
 
 ## 📋 变更记录 (Changelog)
 
+### 2026-04-24
+- ✨ win-path-check-hook 新增WSL命令跳过检测：`wsl ...` 命令整体跳过路径检测
+- ✨ bash-permission-hook 新增 `allowInWsl` 配置字段，支持 find/grep/awk 在WSL环境下放行
+
 ### 2025-12-23 15:34:56
 - ✨ 新增 win-path-check-hook 模块支持
 - 📊 更新模块架构图，使用可点击的 Mermaid 图表
