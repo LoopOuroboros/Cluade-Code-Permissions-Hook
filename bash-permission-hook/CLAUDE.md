@@ -47,20 +47,32 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 
 ### 主要函数
 
-#### `handleHook(input)`
+#### `handleHook(input)` — `check-command.js`
 主处理函数，接收 Claude Code 传入的命令参数
 
-#### `loadRules()`
-从配置文件加载拦截规则
+#### `makeDecision(command)` — `decision-maker.js`
+决策入口，遍历命令上下文并调用 `evaluateCommand()`
 
-#### `splitCommandsWithSplits(command)`
-扩展的命令拆分函数，支持操作符位置检测
+#### `evaluateCommand(context, rules)` — `decision-maker.js`
+三级配置匹配：specialCommands → gitClassification → rules 数组
 
-#### `isInPipeReceiver()`
-检查命令是否作为管道接收端
+#### `loadConfig()` — `rule-engine.js`
+加载完整配置对象（含所有配置段），带缓存
 
-#### `checkCommand(cmd, rules, options)`
-基于规则检索单个命令是否被拦截
+#### `loadRules()` — `rule-engine.js`
+返回 `config.rules` 数组，向后兼容
+
+#### `loadWrapperConfig()` — `rule-engine.js`
+返回 `config.wrapperCommands` 配置
+
+#### `matchRule(commandName, args, context, rules)` — `rule-engine.js`
+基于 rules 数组匹配单条规则
+
+#### `matchSpecialCommand(commandName, args, context)` — `rule-engine.js`
+基于 `specialCommands` 配置段处理 echo/cat/head/tail 等命令
+
+#### `handleGitCommand(context)` — `rule-engine.js`
+基于 `gitClassification` 配置段处理所有 git 子命令
 
 ## 关键文件
 
@@ -75,20 +87,108 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 
 ## 配置说明
 
-### 规则结构
+### 配置结构概览
+
+`config.json` 包含 5 个配置段，全部命令拦截逻辑由配置驱动：
+
+```json
+{
+  "skipWrapperCheck": { ... },     // 包装命令跳过检测
+  "gitClassification": { ... },    // Git 命令分类
+  "specialCommands": { ... },      // 特殊命令处理 (echo/cat/head/tail)
+  "wrapperCommands": { ... },      // 包装命令提取配置
+  "rules": [ ... ]                 // 通用规则数组
+}
+```
+
+### 1. `skipWrapperCheck` — 包装命令跳过检测
+
+```json
+{
+  "enabled": true,
+  "prefixes": ["wsl "]
+}
+```
+
+命令以 `prefixes` 中任意前缀开头时，跳过所有规则检查直接放行。
+
+### 2. `gitClassification` — Git 命令分类
+
+```json
+{
+  "actionCommands": {
+    "decision": "ask",
+    "message": "...",
+    "commands": ["commit", "push", ...]
+  },
+  "conditionalCommands": {
+    "branch": {
+      "defaultDecision": "allow",
+      "dangerousFlags": ["-d", "-D", ...],
+      "decision": "ask",
+      "message": "..."
+    }
+  },
+  "readonlyCommands": ["status", "log", ...]
+}
+```
+
+- `actionCommands`: 需要确认的 Git 操作类命令
+- `conditionalCommands`: 根据参数决定是否拦截（支持 `dangerousFlags`、`dangerousSubcommands`、`readonlySubcommands`）
+- `readonlyCommands`: 始终放行的只读命令
+
+### 3. `specialCommands` — 特殊命令处理
+
+```json
+{
+  "echo": {
+    "decision": "deny",
+    "conditions": { "denyFileOutput": true },
+    "message": "..."
+  },
+  "cat": {
+    "decision": "deny",
+    "allowInPipeSender": true,
+    "allowInPipeReceiver": true,
+    "message": "..."
+  }
+}
+```
+
+支持条件：`denyFileOutput`、`allowNullRedirect`、`allowFollow`、`maxLines`
+支持管道放行：`allowInPipeSender`、`allowInPipeReceiver`
+
+### 4. `wrapperCommands` — 包装命令提取
+
+```json
+{
+  "wsl": {
+    "triggers": ["wsl"],
+    "commandFlags": ["-c", "--command"],
+    "extractFromLastArg": true
+  }
+}
+```
+
+定义如何从包装命令中提取内部命令进行递归检查。
+
+### 5. `rules` — 通用规则数组
+
 ```json
 {
   "pattern": "grep",
-  "action": "reject",
+  "decision": "deny",
   "suggestion": "使用内置的Grep工具代替",
   "allowInPipeReceiver": true,
   "allowInWsl": true
 }
 ```
 
-**新增字段说明**：
-- **`allowInPipeReceiver`**: Boolean类型，可选字段。设置为 `true` 时，命令在管道接收端位置将被放行，便于与其他命令配合进行数据处理。
-- **`allowInWsl`**: Boolean类型，可选字段。设置为 `true` 时，命令在WSL环境下将被放行，因为WSL内部执行的是Linux命令，无需拦截。
+**支持字段**：
+- **`allowInPipeReceiver`**: 命令在管道接收端位置放行
+- **`allowInPipeSender`**: 命令在管道发送端位置放行
+- **`allowInWsl`**: 命令在WSL环境下放行
+- **`allowInConditional`**: 命令在 `&&`/`||` 后放行
 
 ### 支持的命令类型
 - **单命令**: `grep`, `find`, `cat`
@@ -115,10 +215,11 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 - **性能优化**: 命令拆分结果缓存
 
 ### 🎯 Git 命令智能分类
-- **只读命令自动放行**: `status`, `log`, `diff`, `show`, `branch` (安全参数), `tag` (安全参数) 等
-- **操作类命令用户确认**: `commit`, `push`, `pull`, `merge`, `rebase`, `checkout`, `reset`, `clean` 等
-- **智能参数分析**: 区分 `git branch` (只读) 和 `git branch -D` (操作类)
-- **向后兼容**: 保留现有 config.json 中的 Git 规则作为后备
+- **完全配置驱动**: 所有 Git 命令分类由 `config.json` → `gitClassification` 段定义
+- **只读命令自动放行**: `readonlyCommands` 数组中定义的命令直接放行
+- **操作类命令用户确认**: `actionCommands.commands` 中定义的命令需要确认
+- **条件命令参数分析**: `conditionalCommands` 支持 dangerousFlags/dangerousSubcommands/readonlySubcommands 精细控制
+- **零代码扩展**: 新增 Git 子命令只需修改配置
 
 ## 部署注意
 
@@ -142,9 +243,13 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 ## 开发指南
 
 ### 添加新拦截规则
-1. 在 `config/config.json` 中添加规则配置
-2. 在 Claude Code 环境中验证特殊场景（如管道位置）
-3. 更新部署文档（如需要）
+
+**通用命令**: 在 `config.json` → `rules` 数组中添加规则配置
+**特殊命令** (如 echo/cat 类): 在 `config.json` → `specialCommands` 中添加
+**Git 子命令**: 在 `config.json` → `gitClassification` 中添加
+**包装命令**: 在 `config.json` → `wrapperCommands` 中添加
+
+无需修改任何核心代码。
 
 ### 调试技巧
 ```javascript
@@ -162,11 +267,21 @@ console.log('管道位置检测:', isPipeReceiver);
 
 ## 版本信息
 
-- **当前版本**: 2.0.0
+- **当前版本**: 3.0.0
 - **兼容性**: Node.js >= 14.0.0
-- **最后更新**: 2025-12-23
+- **最后更新**: 2026-05-06
 
 ## 📋 变更记录 (Changelog)
+
+### 2026-05-06
+- 🏗️ **架构重构**: 消除全部硬编码命令逻辑，实现完全配置驱动
+- ⚙️ config.json 新增 `skipWrapperCheck`、`gitClassification`、`specialCommands`、`wrapperCommands` 四个配置段
+- 🔧 rule-engine.js 新增 `loadConfig()`、`loadWrapperConfig()`、`matchSpecialCommand()`、`handleGitCommand()`
+- 🔧 decision-maker.js 删除全部硬编码 handler (handleEcho/handleHeadTail/handleCat/handleGitCommand/isGitReadonlyCommand/extractLineCount)
+- 🔧 context-analyzer.js 删除硬编码 WRAPPER_COMMANDS，改为从 config.json 动态加载
+- 🔧 check-command.js WSL 跳过逻辑改为配置驱动
+- 🗑️ config.json 删除 7 条失效的 git 规则（已由 gitClassification 管理）
+- 📊 版本升级至 3.0.0
 
 ### 2026-04-24
 - 🎯 新增 `allowInWsl` 配置字段，支持在WSL环境下放行指定命令

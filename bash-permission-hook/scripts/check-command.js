@@ -6,6 +6,7 @@
  */
 
 const { makeDecision } = require('./rules/decision-maker');
+const { loadConfig } = require('./rules/rule-engine');
 
 /**
  * 主Hook处理函数
@@ -16,16 +17,20 @@ function handleHook(input) {
     try {
         const fullCommand = input.tool_input.command;
 
-        // WSL命令跳过检测：wsl后面的内容是Linux命令，由WSL环境处理
-        const commandLower = (fullCommand || '').trim().toLowerCase();
-        if (commandLower.startsWith('wsl ')) {
-            return {
-                continue: true,
-                hookSpecificOutput: {
-                    hookEventName: "PreToolUse",
-                    permissionDecision: "allow"
-                }
-            };
+        // 包装命令跳过检测：配置驱动，跳过指定前缀的包装命令
+        const config = loadConfig();
+        const skipCheck = config.skipWrapperCheck;
+        if (skipCheck && skipCheck.enabled !== false && skipCheck.prefixes) {
+            const commandLower = (fullCommand || '').trim().toLowerCase();
+            if (skipCheck.prefixes.some(prefix => commandLower.startsWith(prefix.toLowerCase()))) {
+                return {
+                    continue: true,
+                    hookSpecificOutput: {
+                        hookEventName: "PreToolUse",
+                        permissionDecision: "allow"
+                    }
+                };
+            }
         }
 
         const decision = makeDecision(fullCommand);

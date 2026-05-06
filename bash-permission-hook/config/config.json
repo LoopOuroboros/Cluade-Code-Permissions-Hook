@@ -1,4 +1,124 @@
 {
+	"skipWrapperCheck": {
+		"enabled": true,
+		"prefixes": ["wsl "]
+	},
+	"gitClassification": {
+		"actionCommands": {
+			"decision": "ask",
+			"message": "禁止擅自执行Git操作类命令，必须征得用户同意",
+			"commands": [
+				"push", "pull", "merge", "rebase", "checkout",
+				"reset", "restore", "clean", "cherry-pick", "revert",
+				"am", "bisect", "worktree", "submodule", "filter-branch"
+			]
+		},
+		"conditionalCommands": {
+			"branch": {
+				"defaultDecision": "allow",
+				"dangerousFlags": ["-d", "-D", "--delete", "-m", "--move", "-c", "--copy"],
+				"decision": "ask",
+				"message": "git branch 删除/重命名操作需要确认"
+			},
+			"tag": {
+				"defaultDecision": "allow",
+				"dangerousFlags": ["-d", "-D", "--delete"],
+				"decision": "ask",
+				"message": "git tag 删除操作需要确认"
+			},
+			"config": {
+				"defaultDecision": "allow",
+				"dangerousFlags": ["--add", "--unset", "--unset-all", "--replace-all", "--edit"],
+				"decision": "ask",
+				"message": "git config 写入操作需要确认"
+			},
+			"remote": {
+				"defaultDecision": "allow",
+				"dangerousSubcommands": ["add", "rename", "remove", "set-url", "prune"],
+				"decision": "ask",
+				"message": "git remote 修改操作需要确认"
+			},
+			"stash": {
+				"defaultDecision": "allow",
+				"readonlySubcommands": ["list", "show"],
+				"decision": "ask",
+				"message": "git stash 操作需要确认"
+			},
+			"fetch": {
+				"defaultDecision": "allow",
+				"dangerousFlags": ["--prune", "-p"],
+				"decision": "ask",
+				"message": "git fetch --prune 需要确认"
+			}
+		},
+		"readonlyCommands": [
+			"status", "log", "show", "diff", "rev-parse", "describe",
+			"ls-files", "ls-tree", "ls-remote", "help", "version", "shortlog"
+		]
+	},
+	"specialCommands": {
+		"echo": {
+			"decision": "deny",
+			"conditions": {
+				"denyFileOutput": true
+			},
+			"message": "禁止使用echo写入文件，请使用Edit工具代替"
+		},
+		"cat": {
+			"decision": "deny",
+			"allowInPipeSender": true,
+			"allowInPipeReceiver": true,
+			"message": "使用内置的Read工具代替"
+		},
+		"head": {
+			"decision": "deny",
+			"allowInPipeSender": true,
+			"allowInPipeReceiver": true,
+			"conditions": {
+				"allowFollow": true,
+				"maxLines": 100
+			},
+			"message": "请使用Read工具读取文件"
+		},
+		"tail": {
+			"decision": "deny",
+			"allowInPipeSender": true,
+			"allowInPipeReceiver": true,
+			"conditions": {
+				"allowFollow": true,
+				"maxLines": 100
+			},
+			"message": "请使用Read工具读取文件"
+		}
+	},
+	"wrapperCommands": {
+		"wsl": {
+			"triggers": ["wsl"],
+			"commandFlags": ["-c", "--command"],
+			"execFlags": ["-e", "--exec"],
+			"extractFromLastArg": true
+		},
+		"docker": {
+			"triggers": ["docker"],
+			"subcommands": ["exec", "run"],
+			"commandFlags": ["-c", "--command"],
+			"extractFromLastArg": true
+		},
+		"ssh": {
+			"triggers": ["ssh"],
+			"extractFromLastArg": true
+		},
+		"bash": {
+			"triggers": ["bash"],
+			"commandFlags": ["-c", "--command"],
+			"extractAfterFlag": true
+		},
+		"sh": {
+			"triggers": ["sh"],
+			"commandFlags": ["-c", "--command"],
+			"extractAfterFlag": true
+		}
+	},
 	"rules": [
 		{
 			"pattern": "find",
@@ -54,46 +174,6 @@
 			"pattern": "rmdir",
 			"decision": "ask",
 			"suggestion": "禁止擅自使用删除命令，必须征得用户同意"
-		},
-		{
-			"pattern": "git commit",
-			"decision": "ask",
-			"suggestion": "禁止擅自使用git commit进行代码提交，必须征得用户同意"
-		},
-		{
-			"pattern": "git checkout",
-			"decision": "ask",
-			"suggestion": "禁止擅自使用git checkout进行代码回滚，必须征得用户同意"
-		},
-		{
-			"pattern": "git restore",
-			"decision": "ask",
-			"suggestion": "禁止擅自使用git restore进行代码回滚，必须征得用户同意"
-		},
-		{
-			"pattern": "git reset",
-			"decision": "ask",
-			"suggestion": "禁止擅自使用git reset命令，这可能导致数据丢失，必须征得用户同意"
-		},
-		{
-			"pattern": "git push",
-			"decision": "deny",
-			"suggestion": "禁止擅自使用git push推送命令，必须征得用户同意"
-		},
-		{
-			"pattern": "git clean",
-			"decision": "ask",
-			"suggestion": "禁止擅自使用git clean命令，这可能导致未跟踪文件永久删除，必须征得用户同意"
-		},
-		{
-			"pattern": "git rebase",
-			"decision": "ask",
-			"suggestion": "禁止擅自使用git rebase命令，这可能导致提交历史混乱，必须征得用户同意"
-		},
-		{
-			"pattern": "git branch -D",
-			"decision": "ask",
-			"suggestion": "禁止擅自使用git branch -D强制删除分支命令，必须征得用户同意"
 		}
 	]
 }

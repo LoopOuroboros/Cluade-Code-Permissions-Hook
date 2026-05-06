@@ -4,38 +4,7 @@
  */
 
 const { parse } = require('./command-parser');
-
-/**
- * 包装命令配置 - 定义如何从不同包装器中提取内部命令
- */
-const WRAPPER_COMMANDS = {
-    wsl: {
-        triggers: ['wsl'],
-        commandFlags: ['-c', '--command'],
-        execFlags: ['-e', '--exec'],
-        extractFromLastArg: true
-    },
-    docker: {
-        triggers: ['docker'],
-        subcommands: ['exec', 'run'],
-        commandFlags: ['-c', '--command'],
-        extractFromLastArg: true
-    },
-    ssh: {
-        triggers: ['ssh'],
-        extractFromLastArg: true
-    },
-    bash: {
-        triggers: ['bash'],
-        commandFlags: ['-c', '--command'],
-        extractAfterFlag: true
-    },
-    sh: {
-        triggers: ['sh'],
-        commandFlags: ['-c', '--command'],
-        extractAfterFlag: true
-    }
-};
+const { loadWrapperConfig } = require('../rules/rule-engine');
 
 function analyzeContext(command) {
     const ast = parse(command);
@@ -122,8 +91,8 @@ function extractInnerCommand(context) {
     const commandName = context.command;
     const args = context.args || [];
 
-    // 检查是否是已知的包装命令
-    for (const [wrapperType, config] of Object.entries(WRAPPER_COMMANDS)) {
+    // 检查是否是已知的包装命令（配置驱动）
+    for (const [wrapperType, config] of Object.entries(loadWrapperConfig())) {
         if (config.triggers.includes(commandName)) {
             return extractByConfig(context, config);
         }
