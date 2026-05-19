@@ -6,7 +6,7 @@
 
 ## 模块概述
 
-Web Permission Hook 是 Claude Code Web 工具权限控制的核心实现模块，负责拦截 WebFetch 和 WebSearch 工具调用，并引导用户使用更安全的 MCP (Model Context Protocol) 服务。
+Web Permission Hook 是 Claude Code Web 工具权限控制的核心实现模块，负责拦截 WebSearch 工具调用，并引导用户使用更安全的 MCP (Model Context Protocol) 服务。
 
 ## 接口定义
 
@@ -19,7 +19,7 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 **输入格式**:
 ```json
 {
-  "tool_name": "WebFetch" | "WebSearch",
+  "tool_name": "WebSearch",
   "tool_input": {
     // 工具特定参数
   }
@@ -30,7 +30,7 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 ```json
 {
   "decision": "block",
-  "reason": "⚠️ WebFetch 工具被拦截，使用 Fetch MCP 来代替"
+  "reason": "⚠️ WebSearch 工具被拦截，使用 Search MCP 来代替"
 }
 ```
 
@@ -43,7 +43,7 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 ### 外部依赖
 - **Node.js Runtime**: >= 14.0.0
 - **Claude Code Hook API**: 通过标准输入传递参数
-- **MCP 服务生态**: Fetch MCP, Search MCP (推荐替代)
+- **MCP 服务生态**: Search MCP (推荐替代)
 
 ## 模块入口
 
@@ -78,25 +78,18 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 ```json
 {
   "toolMappings": {
-    "WebFetch": "使用 Fetch MCP 来代替",
     "WebSearch": "使用 Search MCP 来代替"
   }
 }
 ```
 
 ### 支持的工具类型
-- **WebFetch**: 网络页面获取工具 → Fetch MCP 服务
 - **WebSearch**: 网络搜索工具 → Search MCP 服务
 - **其他工具**: 默认放行，除非在映射中明确定义
 
 ## MCP 生态集成
 
 ### 推荐的 MCP 服务
-
-#### 🔌 Fetch MCP
-- **功能**: 强大的网络页面获取和内容处理
-- **优势**: 更好的错误处理、内容解析、安全控制
-- **替代场景**: 所有 WebFetch 使用场景
 
 #### 🔌 Search MCP
 - **功能**: 专业的网络搜索服务
@@ -128,12 +121,11 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 
 运行目录格式：
 ```
-~/.claude/plugins/cache/claude-code-permissions-hook/web-permission-hook/1.1.0/
+~/.claude/plugins/cache/claude-code-permissions-hook/web-permission-hook/2.0.0/
 ```
 
 ### 手动测试
 在 Claude Code 真实环境中测试：
-- WebFetch 工具拦截功能
 - WebSearch 工具拦截功能
 - 确认 MCP 替代建议正确显示
 
@@ -169,7 +161,7 @@ console.log('决策输出:', result);
 
 ## 版本信息
 
-- **当前版本**: 1.2.0
+- **当前版本**: 2.0.0
 - **兼容性**: Node.js >= 14.0.0
 - **最后更新**: 2025-12-23
 - **项目状态**: ✅ 生产就绪

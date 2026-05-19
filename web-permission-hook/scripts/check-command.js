@@ -2,7 +2,7 @@
 
 /**
  * Claude Code Web 权限钩子
- * 拦截 WebFetch 和 WebSearch 工具调用并推荐使用 MCP 工具
+ * 拦截 WebSearch 工具调用并推荐使用 MCP 工具
  */
 
 const fs = require('fs');

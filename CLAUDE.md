@@ -190,7 +190,7 @@ graph TD
 | **文件读取** | `cat/head/tail` | Read 工具 | ✅ 已实现 |
 | **文件编辑** | `sed` | Edit 工具 | ✅ 已实现 |
 | **文本处理** | `awk` | Grep + Read 组合 | ✅ 已实现 |
-| **网络请求** | `WebFetch` | Fetch MCP | ✅ 已实现 |
+| **网络请求** | `WebFetch` | 无拦截（已移除） | ✅ 已移除 |
 | **网络搜索** | `WebSearch` | Search MCP | ✅ 已实现 |
 | **路径问题** | Windows 反斜杠路径 | 自动修正/提示 | ✅ 已实现 |
 | **包装命令** | `wsl -c "find..."` | 内部命令拦截 | ✅ 已实现 |
