@@ -1,0 +1,5 @@
+{
+  "name": "task-list-hook",
+  "version": "1.0.0",
+  "description": "任务清单管理规则提醒插件，在TaskCreate/TaskUpdate/TaskList等关键操作点注入运行时提示，确保InProgress上限、完成标记、最终清理等规则不被遗漏"
+}

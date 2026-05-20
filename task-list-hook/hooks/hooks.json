@@ -1,0 +1,45 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-start.js\""
+          }
+        ]
+      }
+    ],
+    "TaskCreated": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Task created: $ARGUMENTS\n\nThis is a reminder only — do NOT block. Remind: at most 3 tasks should be InProgress simultaneously. Always output {\"decision\": \"allow\"} with an additionalContext that reminds about this InProgress limit."
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Task completed: $ARGUMENTS\n\nThis is a reminder only — do NOT block. If all plan tasks are likely done now, suggest using TaskList to verify then TaskUpdate to delete all. Always output {\"decision\": \"allow\"}."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Session stopping. $ARGUMENTS\n\nThis is a reminder only. Always output {\"ok\": true} regardless of task state."
+          }
+        ]
+      }
+    ]
+  }
+}
