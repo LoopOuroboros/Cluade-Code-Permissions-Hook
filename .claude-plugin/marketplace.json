@@ -27,6 +27,12 @@
       "source": "./task-list-hook",
       "description": "任务清单管理规则提醒插件，在TaskCreate/TaskUpdate/TaskList等关键操作点注入运行时提示，确保InProgress上限、完成标记、最终清理等规则不被遗漏。",
       "version": "1.0.0"
+    },
+    {
+      "name": "prompt-restatement-hook",
+      "source": "./prompt-restatement-hook",
+      "description": "用户意图确认插件，在每次提交提示词时要求LLM复述用户请求并通过AskUserQuestion确认理解正确后才执行。",
+      "version": "1.0.0"
     }
   ]
 }

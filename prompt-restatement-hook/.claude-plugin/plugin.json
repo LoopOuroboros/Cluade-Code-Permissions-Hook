@@ -1,0 +1,6 @@
+{
+  "name": "prompt-restatement-hook",
+  "version": "1.0.0",
+  "description": "用户意图确认插件，在用户提交提示词后要求 LLM 复述请求并通过 AskUserQuestion 确认理解正确后才执行",
+  "type": "hook"
+}

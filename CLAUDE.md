@@ -14,6 +14,7 @@ graph TD
     A["(根) Claude Code 权限钩子插件项目"] --> B["bash-permission-hook"];
     A --> C["web-permission-hook"];
     A --> D["win-path-check-hook"];
+    A --> H["prompt-restatement-hook"];
     A --> E[".claude"];
     A --> F[".claude-plugin"];
     A --> G["scripts"];
@@ -32,6 +33,10 @@ graph TD
     D --> D1["scripts/check-path.js"];
     D --> D2["hooks/hooks.json"];
 
+    %% Prompt Restatement 模块详情
+    H --> H1["scripts/check-prompt.js"];
+    H --> H2["hooks/hooks.json"];
+
     %% 配置模块
     E --> E1["rules/constitution.md"];
     E --> E2["settings.local.json"];
@@ -47,11 +52,13 @@ graph TD
     click B "./bash-permission-hook/CLAUDE.md" "查看 bash-permission-hook 模块文档"
     click C "./web-permission-hook/CLAUDE.md" "查看 web-permission-hook 模块文档"
     click D "./win-path-check-hook/CLAUDE.md" "查看 win-path-check-hook 模块文档"
+    click H "./prompt-restatement-hook/CLAUDE.md" "查看 prompt-restatement-hook 模块文档"
 
     style A fill:#e1f5fe
     style B fill:#f3e5f5
     style C fill:#f3e5f5
     style D fill:#f3e5f5
+    style H fill:#f3e5f5
     style E fill:#e8f5e8
     style F fill:#fff3e0
     style G fill:#fff3e0
@@ -64,6 +71,7 @@ graph TD
 | **Bash Permission Hook** | [`bash-permission-hook/`](./bash-permission-hook/CLAUDE.md) | Bash 命令权限控制与智能拦截 | ✅ 生产就绪 | [模块文档](./bash-permission-hook/CLAUDE.md) |
 | **Web Permission Hook** | [`web-permission-hook/`](./web-permission-hook/CLAUDE.md) | Web 工具权限控制与 MCP 替代 | ✅ 生产就绪 | [模块文档](./web-permission-hook/CLAUDE.md) |
 | **Win Path Check Hook** | [`win-path-check-hook/`](./win-path-check-hook/CLAUDE.md) | Windows 路径兼容性检查 | ✅ 生产就绪 | [模块文档](./win-path-check-hook/CLAUDE.md) |
+| **Prompt Restatement Hook** | [`prompt-restatement-hook/`](./prompt-restatement-hook/CLAUDE.md) | 用户意图确认，LLM 复述+确认 | ✅ 生产就绪 | [模块文档](./prompt-restatement-hook/CLAUDE.md) |
 
 ## 🗂️ 详细模块结构
 
@@ -94,6 +102,15 @@ graph TD
 
 - ****核心入口****: `scripts/check-path.js` - 路径检查逻辑
 - ****钩子配置****: `hooks/hooks.json` - Bash 工具钩子注册
+- ****插件元数据****: `.claude-plugin/plugin.json` - 插件信息
+
+### 📁 [prompt-restatement-hook](./prompt-restatement-hook/CLAUDE.md)
+**💬 意图确认插件** - LLM 复述+AskUserQuestion 确认
+
+> 🏠 [模块文档 →](./prompt-restatement-hook/CLAUDE.md)
+
+- ****核心入口****: `scripts/check-prompt.js` - 指令注入逻辑
+- ****钩子配置****: `hooks/hooks.json` - UserPromptSubmit 钩子注册
 - ****插件元数据****: `.claude-plugin/plugin.json` - 插件信息
 
 ---
@@ -128,10 +145,11 @@ graph TD
 - **文档资源**: 7 个 CLAUDE.md 文档
 
 ### 🔍 模块覆盖率
-- **识别模块**: 3/3 (100%) ✅
+- **识别模块**: 4/4 (100%) ✅
   - bash-permission-hook ✅
   - web-permission-hook ✅
   - win-path-check-hook ✅
+  - prompt-restatement-hook ✅
 - **核心功能覆盖**: 100% ✅
 
 ## 🏛️ 全局开发规范
@@ -173,6 +191,7 @@ graph TD
 1. **🔧 Bash 层面**: 拦截危险系统命令，引导使用内置安全工具
 2. **🌐 Web 层面**: 拦截原生网络工具，引导使用 MCP 服务生态
 3. **🪟 路径层面**: 检测 Windows 路径兼容性问题，自动修正或提示
+4. **💬 意图层面**: 在用户提交提示词后要求 LLM 复述并通过 AskUserQuestion 确认理解
 
 ### 🏆 技术亮点
 - **智能管道检测**: 区分命令使用上下文，精准拦截
@@ -201,6 +220,7 @@ graph TD
 - ✅ Bash 命令智能拦截与管道位置检测
 - ✅ Web 工具权限控制与 MCP 替代引导
 - ✅ Windows 路径兼容性检查与自动修正
+- ✅ 用户意图确认，LLM 复述 + AskUserQuestion 确认流程
 - ✅ 可配置的规则系统和自动化部署
 - ✅ 完整的文档体系和部署工具
 
@@ -212,6 +232,9 @@ graph TD
 ---
 
 ## 📋 变更记录 (Changelog)
+
+### 2026-05-20
+- ✨ 新增 prompt-restatement-hook 模块，用户意图确认插件
 
 ### 2026-04-24
 - ✨ win-path-check-hook 新增WSL命令跳过检测：`wsl ...` 命令整体跳过路径检测
