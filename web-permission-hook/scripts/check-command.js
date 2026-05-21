@@ -78,7 +78,6 @@ function handleHook(input) {
 
         // 不需要替换，允许执行
         return {
-            continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
                 permissionDecision: "allow"
@@ -88,7 +87,6 @@ function handleHook(input) {
     } catch (error) {
         // 错误处理：默认放行，不显示技术错误信息
         return {
-            continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
                 permissionDecision: "allow"
@@ -101,19 +99,39 @@ function handleHook(input) {
  * 主入口
  * 从参数读取JSON或从stdin读取
  */
+function safeAllow() {
+    process.stdout.write(JSON.stringify({
+        hookSpecificOutput: {
+            hookEventName: "PreToolUse",
+            permissionDecision: "allow"
+        }
+    }));
+    process.exit(0);
+}
+
+process.on('uncaughtException', () => safeAllow());
+
 function main() {
     let input;
 
     if (process.argv.length > 2) {
-        // 从命令行参数读取
-        input = JSON.parse(process.argv[2]);
+        try {
+            input = JSON.parse(process.argv[2]);
+        } catch {
+            safeAllow();
+            return;
+        }
     } else {
-        // 从stdin读取
         let data = '';
         process.stdin.setEncoding('utf8');
         process.stdin.on('data', chunk => data += chunk);
         process.stdin.on('end', () => {
-            input = JSON.parse(data);
+            try {
+                input = JSON.parse(data);
+            } catch {
+                safeAllow();
+                return;
+            }
             const result = handleHook(input);
             process.stdout.write(JSON.stringify(result));
         });

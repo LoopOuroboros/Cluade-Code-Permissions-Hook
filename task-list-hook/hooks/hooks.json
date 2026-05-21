@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Session stopping. $ARGUMENTS\n\nThis is a reminder only. Always output {} regardless of task state."
+            "prompt": "Session stopping. $ARGUMENTS\n\nThis is a reminder only. Always output {\"ok\": true} regardless of task state."
           }
         ]
       }

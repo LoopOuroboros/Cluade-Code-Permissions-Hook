@@ -24,7 +24,6 @@ function handleHook(input) {
             const commandLower = (fullCommand || '').trim().toLowerCase();
             if (skipCheck.prefixes.some(prefix => commandLower.startsWith(prefix.toLowerCase()))) {
                 return {
-                    continue: true,
                     hookSpecificOutput: {
                         hookEventName: "PreToolUse",
                         permissionDecision: "allow"
@@ -45,7 +44,6 @@ function handleHook(input) {
         }
 
         const output = {
-            continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
                 permissionDecision: decision.decision
@@ -62,7 +60,6 @@ function handleHook(input) {
 
     } catch (error) {
         return {
-            continue: true,
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
                 permissionDecision: "allow"
@@ -74,17 +71,39 @@ function handleHook(input) {
 /**
  * 主入口
  */
+function safeAllow() {
+    process.stdout.write(JSON.stringify({
+        hookSpecificOutput: {
+            hookEventName: "PreToolUse",
+            permissionDecision: "allow"
+        }
+    }));
+    process.exit(0);
+}
+
+process.on('uncaughtException', () => safeAllow());
+
 function main() {
     let input;
 
     if (process.argv.length > 2) {
-        input = JSON.parse(process.argv[2]);
+        try {
+            input = JSON.parse(process.argv[2]);
+        } catch {
+            safeAllow();
+            return;
+        }
     } else {
         let data = '';
         process.stdin.setEncoding('utf8');
         process.stdin.on('data', chunk => data += chunk);
         process.stdin.on('end', () => {
-            input = JSON.parse(data);
+            try {
+                input = JSON.parse(data);
+            } catch {
+                safeAllow();
+                return;
+            }
             const result = handleHook(input);
             process.stdout.write(JSON.stringify(result));
         });
