@@ -14,7 +14,13 @@
  */
 
 // 读取标准输入
-const input = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+let input;
+try {
+  input = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+} catch (e) {
+  process.stderr.write('Path check hook: invalid JSON input\n');
+  process.exit(0);
+}
 
 /**
  * 检测Windows路径问题的主要函数
@@ -288,7 +294,7 @@ function handleHook(input) {
         }
     } catch (error) {
         // 错误情况下默认放行，避免阻塞正常操作
-        console.error('Path check hook error:', error.message);
+        process.stderr.write('Path check hook error: ' + error.message + '\n');
         return {
             continue: true,
             hookSpecificOutput: {
@@ -301,4 +307,4 @@ function handleHook(input) {
 
 // 执行主函数并输出结果
 const output = handleHook(input);
-console.log(JSON.stringify(output));
+process.stdout.write(JSON.stringify(output));

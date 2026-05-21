@@ -37,7 +37,6 @@ function handleHook(input) {
 
         if (decision.decision === 'allow') {
             return {
-                continue: true,
                 hookSpecificOutput: {
                     hookEventName: "PreToolUse",
                     permissionDecision: "allow"

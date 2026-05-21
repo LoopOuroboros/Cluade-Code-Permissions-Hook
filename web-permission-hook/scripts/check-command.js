@@ -53,7 +53,6 @@ function handleHook(input) {
         // 如果工具名称为空，默认放行
         if (!toolName) {
             return {
-                continue: true,
                 hookSpecificOutput: {
                     hookEventName: "PreToolUse",
                     permissionDecision: "allow"
@@ -69,7 +68,6 @@ function handleHook(input) {
 
         if (result.needReplace) {
             return {
-                continue: true,
                 hookSpecificOutput: {
                     hookEventName: "PreToolUse",
                     permissionDecision: "deny",
