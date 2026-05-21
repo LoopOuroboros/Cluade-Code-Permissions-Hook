@@ -38,12 +38,17 @@ function isSlashCommandOnly(text) {
  */
 function buildRestatementInstruction(userPrompt) {
   const sanitized = sanitize(userPrompt);
+  const isSlash = isSlashCommandOnly(sanitized);
+  process.stderr.write(`[prompt-restatement-hook] raw="${userPrompt}" sanitized="${sanitized}" isSlash=${isSlash}\n`);
+
   if (!sanitized) {
+    process.stderr.write('[prompt-restatement-hook] empty prompt, skip\n');
     return '';
   }
 
   // 斜杠命令直接放行，无需复述确认
-  if (isSlashCommandOnly(sanitized)) {
+  if (isSlash) {
+    process.stderr.write('[prompt-restatement-hook] slash command, skip\n');
     return '';
   }
 
