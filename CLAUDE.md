@@ -154,6 +154,14 @@ graph TD
 
 ## 🏛️ 全局开发规范
 
+### 📖 Hooks API 参考
+
+修改任何插件的钩子脚本或 `hooks.json` 时，必须**首先从官方文档获取最新规范**：
+
+- **URL**: https://code.claude.com/docs/zh-CN/hooks
+- **用途**: 确认返回值字段名、JSON schema、退出码约定、各 Hook 事件支持的决策字段
+- **原则**: 每次修改前重新抓取，确保不使用已废弃的 API 格式
+
 ### 🔧 技术栈统一
 - **运行时**: Node.js >= 14.0.0 (所有模块)
 - **语言**: JavaScript (ES6+)
@@ -223,35 +231,5 @@ graph TD
 - ✅ 用户意图确认，LLM 复述 + AskUserQuestion 确认流程
 - ✅ 可配置的规则系统和自动化部署
 - ✅ 完整的文档体系和部署工具
-
-### 📞 联系与支持
-- **文档**: [项目模块文档](./bash-permission-hook/CLAUDE.md) | [Web 模块文档](./web-permission-hook/CLAUDE.md) | [Win Path 模块文档](./win-path-check-hook/CLAUDE.md)
-- **规则说明**: [.claude/rules/constitution.md](./.claude/rules/constitution.md)
-- **扫描索引**: [.claude/index.json](./.claude/index.json)
-
----
-
-## 📋 变更记录 (Changelog)
-
-### 2026-05-20
-- ✨ 新增 prompt-restatement-hook 模块，用户意图确认插件
-
-### 2026-04-24
-- ✨ win-path-check-hook 新增WSL命令跳过检测：`wsl ...` 命令整体跳过路径检测
-- ✨ bash-permission-hook 新增 `allowInWsl` 配置字段，支持 find/grep/awk 在WSL环境下放行
-
-### 2025-12-23 15:34:56
-- ✨ 新增 win-path-check-hook 模块支持
-- 📊 更新模块架构图，使用可点击的 Mermaid 图表
-- 🔍 完成项目 AI 上下文初始化扫描
-- 📈 统计文件覆盖率和模块状态
-- 📝 新增 .claude/index.json 扫描记录文件
-
-### 2025-12-22 10:13:44
-- ✨ 初始版本创建
-- 🏗️ 建立 bash-permission-hook 和 web-permission-hook 模块
-- 📚 完善文档体系
-
----
 
 > **🏠 [返回顶部](#claude-code-权限钩子插件项目)** | **📅 最后更新**: 2025-12-23 15:34:56

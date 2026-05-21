@@ -13,7 +13,7 @@ Bash Permission Hook 是 Claude Code 权限钩子插件的核心实现模块，�
 ### 主入口点
 ```javascript
 // scripts/check-command.js
-handleHook(input) → { decision: "approve" | "block", reason?: string }
+handleHook(input) → { hookSpecificOutput: { permissionDecision: "allow" | "deny" | "ask", ... } }
 ```
 
 **输入格式**:
@@ -28,10 +28,12 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 **输出格式**:
 ```json
 {
-  "decision": "block",
-  "reason": "⚠️ grep命令被拦截，使用内置的Grep工具代替"
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "⚠️ grep命令被拦截，使用内置的Grep工具代替"
+  }
 }
-```
 
 ## 核心依赖
 

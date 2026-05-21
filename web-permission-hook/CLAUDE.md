@@ -13,7 +13,7 @@ Web Permission Hook 是 Claude Code Web 工具权限控制的核心实现模块�
 ### 主入口点
 ```javascript
 // scripts/check-command.js
-handleHook(input) → { decision: "approve" | "block", reason?: string }
+handleHook(input) → { hookSpecificOutput: { permissionDecision: "allow" | "deny", ... } }
 ```
 
 **输入格式**:
@@ -29,10 +29,12 @@ handleHook(input) → { decision: "approve" | "block", reason?: string }
 **输出格式**:
 ```json
 {
-  "decision": "block",
-  "reason": "⚠️ WebSearch 工具被拦截，使用 Search MCP 来代替"
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "⚠️ WebSearch 工具被拦截，使用 Search MCP 来代替"
+  }
 }
-```
 
 ## 核心依赖
 
