@@ -10,17 +10,29 @@
 
 ## 架构设计
 
-| Hook 事件 | 类型 | 目的 |
-|-----------|------|------|
-| `SessionStart` | `command` | 会话开始时通过 stdout 注入完整 6 条规则 |
-| `TaskCreated` | `prompt` | 创建任务后提醒 InProgress ≤ 3 |
-| `TaskCompleted` | `prompt` | 完成任务后提醒核查+清理流程 |
-| `Stop` | `prompt` | 会话停止前提醒任务清理 |
+| Hook 事件 | 类型 | 返回值格式 | 目的 |
+|-----------|------|-----------|------|
+| `SessionStart` | `command` | stdout 纯文本 | 会话开始时注入完整 6 条规则 |
+| `TaskCreated` | `prompt` | `{}` (空 JSON，不阻塞) | 提醒 InProgress ≤ 3 + TaskUpdate/TaskList 管理 |
+| `TaskCompleted` | `prompt` | `{}` (空 JSON，不阻塞) | 提醒 TaskList 核查 + TaskUpdate 清理 |
+| `Stop` | `prompt` | `{}` (空 JSON，不阻塞) | 提醒 TaskList 审查 + TaskUpdate 标记 + 清理删除 |
+
+## TaskList 工具状态变更覆盖
+
+每个 Hook 均覆盖了 TaskList 工具的完整生命周期提醒：
+
+| Hook | TaskUpdate 状态跟踪 | TaskList 核查 | TaskUpdate 清理删除 |
+|------|:--:|:--:|:--:|
+| `SessionStart` (规则 3-6) | ✅ | ✅ | ✅ |
+| `TaskCreated` | ✅ | ✅ | ✅ |
+| `TaskCompleted` | ✅ | ✅ | ✅ |
+| `Stop` | ✅ | ✅ | ✅ |
 
 ## 设计原则
 
 - **SessionStart 用 command**：文档明确 SessionStart 不支持 type: "prompt"，用 Node.js 脚本的 stdout 注入规则
-- **TaskCreated/TaskCompleted 用 prompt**：专用事件，prompt 被设计为条件评估，但所有 prompt 均指明 "do NOT block"
+- **TaskCreated/TaskCompleted/Stop 用 prompt**：专用事件，prompt 被设计为条件评估，但所有 prompt 均指明 "do NOT block"，统一返回 `{}`（空 JSON，不含阻塞字段）
+- **返回值统一**：三个 prompt 型 Hook 均返回 `{}`，不使用无效字段（`decision` 对 TaskCreated/TaskCompleted 无效，`ok` 对 Stop 无效）
 - **低噪音**：只用专用事件，不拦截通用 PreToolUse/PostToolUse
 - **零外部依赖**：仅 session-start.js 使用 Node.js 内置模块
 
