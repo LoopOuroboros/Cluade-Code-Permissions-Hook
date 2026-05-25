@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Task created: $ARGUMENTS\n\nThis is a reminder only — do NOT block. Remind: (1) at most 3 tasks should be InProgress simultaneously, use TaskUpdate to manage status; (2) when all plan tasks are done, use TaskList to verify then TaskUpdate to delete all. Always output {} (empty JSON, no blocking fields)."
+            "prompt": "Output ONLY the following JSON object. Do not add any other text before or after it:\n\n{}\n\n--- Context ---\nTask created: $ARGUMENTS. Good practice: keep at most 3 tasks InProgress simultaneously. When all plan tasks are done, verify with TaskList then clean up with TaskUpdate."
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Task completed: $ARGUMENTS\n\nThis is a reminder only — do NOT block. (1) Check if other tasks remain incomplete via TaskList; (2) If all plan tasks are now completed, use TaskList to confirm then TaskUpdate to delete all (clean up task list). Always output {} (empty JSON, no blocking fields)."
+            "prompt": "Output ONLY the following JSON object. Do not add any other text before or after it:\n\n{}\n\n--- Context ---\nTask completed: $ARGUMENTS. Good practice: check remaining tasks with TaskList. When all plan tasks are completed, confirm with TaskList then clean up with TaskUpdate."
           }
         ]
       }
@@ -35,8 +35,8 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Session stopping. $ARGUMENTS\n\nThis is a reminder only — do NOT block. Before the session ends: (1) use TaskList to review all task statuses; (2) TaskUpdate any completed-but-not-marked tasks to \"completed\"; (3) TaskUpdate all tasks to \"deleted\" to clean up the task list for the next session. Always output {} (empty JSON, no blocking fields)."
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/stop-cleanup.js\""
           }
         ]
       }

@@ -10,12 +10,12 @@
 
 ## 架构设计
 
-| Hook 事件 | 类型 | 返回值格式 | 目的 |
-|-----------|------|-----------|------|
+| Hook 事件 | 类型 | 返回值 | 目的 |
+|-----------|------|-------|------|
 | `SessionStart` | `command` | stdout 纯文本 | 会话开始时注入完整 6 条规则 |
 | `TaskCreated` | `prompt` | `{}` (空 JSON，不阻塞) | 提醒 InProgress ≤ 3 + TaskUpdate/TaskList 管理 |
 | `TaskCompleted` | `prompt` | `{}` (空 JSON，不阻塞) | 提醒 TaskList 核查 + TaskUpdate 清理 |
-| `Stop` | `prompt` | `{}` (空 JSON，不阻塞) | 提醒 TaskList 审查 + TaskUpdate 标记 + 清理删除 |
+| `Stop` | `command` | stdout `{}` + stderr 提醒 | 确定性放行 + 清理提醒展示给用户 |
 
 ## TaskList 工具状态变更覆盖
 
@@ -30,11 +30,10 @@
 
 ## 设计原则
 
-- **SessionStart 用 command**：文档明确 SessionStart 不支持 type: "prompt"，用 Node.js 脚本的 stdout 注入规则
-- **TaskCreated/TaskCompleted/Stop 用 prompt**：专用事件，prompt 被设计为条件评估，但所有 prompt 均指明 "do NOT block"，统一返回 `{}`（空 JSON，不含阻塞字段）
-- **返回值统一**：三个 prompt 型 Hook 均返回 `{}`，不使用无效字段（`decision` 对 TaskCreated/TaskCompleted 无效，`ok` 对 Stop 无效）
+- **SessionStart / Stop 用 command**：SessionStart 不支持 prompt 类型；Stop 的 prompt 类型经实测反复出现 JSON validation failed（LLM 输出非确定性，无法保证纯 JSON），改用 command 脚本确定性输出 `{}`
+- **TaskCreated/TaskCompleted 用 prompt**：专用事件，prompt 被设计为条件评估，但所有 prompt 均指明 "do NOT block"，统一返回 `{}`（空 JSON，不含阻塞字段）。注：这两个同样存在 LLM 输出不可靠的隐患，后续如有报错可同样改为 command
 - **低噪音**：只用专用事件，不拦截通用 PreToolUse/PostToolUse
-- **零外部依赖**：仅 session-start.js 使用 Node.js 内置模块
+- **零外部依赖**：仅 session-start.js / stop-cleanup.js 使用 Node.js 内置模块
 
 ## 关键文件
 
@@ -44,11 +43,14 @@
 ### 📜 `scripts/session-start.js`
 **SessionStart 脚本** - 输出任务清单规则文本到 stdout，由 Claude Code 自动注入上下文
 
+### 📜 `scripts/stop-cleanup.js`
+**Stop 脚本** - 确定性输出 `{}` 到 stdout（放行停止），清理提醒输出到 stderr（展示给用户）
+
 ### 📋 `.claude-plugin/plugin.json`
 **插件元数据** - 名称、版本、描述
 
 ## 版本信息
 
-- **当前版本**: 1.0.0
+- **当前版本**: 1.0.1
 - **兼容性**: Claude Code 所有支持 TaskCreated/TaskCompleted 事件的版本
 - **最后更新**: 2026-05-20
