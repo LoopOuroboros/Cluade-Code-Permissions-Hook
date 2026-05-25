@@ -15,8 +15,8 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Output ONLY the following JSON object. Do not add any other text before or after it:\n\n{}\n\n--- Context ---\nTask created: $ARGUMENTS. Good practice: keep at most 3 tasks InProgress simultaneously. When all plan tasks are done, verify with TaskList then clean up with TaskUpdate."
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/task-created.js\""
           }
         ]
       }
@@ -25,8 +25,8 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Output ONLY the following JSON object. Do not add any other text before or after it:\n\n{}\n\n--- Context ---\nTask completed: $ARGUMENTS. Good practice: check remaining tasks with TaskList. When all plan tasks are completed, confirm with TaskList then clean up with TaskUpdate."
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/task-completed.js\""
           }
         ]
       }
